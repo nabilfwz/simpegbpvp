@@ -45,7 +45,7 @@ Aplikasi web "Manajemen Pegawai BPVP". Tema visual: identitas Kemnaker (navy #00
 - [x] Task 7 — Log Aktivitas (halaman admin)
 - [x] Task 8 — Manajemen User (admin)
 - [x] Task 9 — Dashboard
-- [ ] Task 10 — Polish, build, README
+- [x] Task 10 — UI Refresh (tema terang, shadcn/ui, mobile responsive, log login)
 
 > Catatan: sebelum mulai task baru, **selalu cek dulu kondisi file yang sudah ada** (jangan asumsi kosong). Kalau ada bagian dari task sebelumnya yang ternyata belum lengkap/error, perbaiki dulu sebelum lanjut.
 
