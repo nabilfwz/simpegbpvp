@@ -47,6 +47,27 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
+    async signIn({ user }) {
+      try {
+        // Catat login ke log aktivitas
+        if (user && user.id) {
+          await prisma.logAktivitas.create({
+            data: {
+              userId: user.id,
+              aksi: "CREATE",
+              entitas: "Login",
+              entitasId: user.id,
+              deskripsi: `User ${user.email} berhasil login`,
+              ipAddress: "127.0.0.1",
+            },
+          });
+        }
+      } catch (error) {
+        console.error("[signIn callback] Error logging login:", error);
+        // Jangan hentikan login meski logging gagal
+      }
+      return true;
+    },
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;

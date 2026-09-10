@@ -6,6 +6,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
+import { Button } from "@/app/components/ui/button";
+import { Input } from "@/app/components/ui/input";
 
 const pegawaiSchema = z.object({
   nip: z.string().min(1, "NIP wajib diisi"),
@@ -108,231 +110,219 @@ export default function TambahPegawaiPage() {
     }
   };
 
+  const FormField = ({
+    label,
+    error,
+    children,
+    required,
+  }: {
+    label: string;
+    error?: string;
+    children: React.ReactNode;
+    required?: boolean;
+  }) => (
+    <div className="space-y-2">
+      <label className="block text-sm font-semibold text-slate-700">
+        {label} {required && <span className="text-red-500">*</span>}
+      </label>
+      {children}
+      {error && <p className="text-red-500 text-xs font-medium">{error}</p>}
+    </div>
+  );
+
   return (
-    <div className="p-6">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-[#003399]">Tambah Pegawai</h1>
-        <p className="text-gray-600 mt-1">Isi data demografi dan informasi kepegawaian</p>
+    <div className="space-y-6">
+      {/* Header */}
+      <div>
+        <h1 className="text-3xl font-bold text-slate-900">Tambah Pegawai Baru</h1>
+        <p className="text-slate-600 mt-1">Isi data demografi dan informasi kepegawaian</p>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="max-w-3xl mx-auto space-y-6">
-        <div className="bg-white rounded-lg shadow p-6 space-y-6">
-          <h2 className="text-lg font-semibold border-b pb-2">Data Identitas</h2>
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        {/* Data Identitas */}
+        <div className="bg-white rounded-xl shadow-md p-6 border border-slate-200 space-y-6">
+          <h2 className="text-lg font-semibold text-slate-900 border-b pb-3">
+            📋 Data Identitas
+          </h2>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium mb-1">NIP *</label>
-              <input
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <FormField label="NIP" error={errors.nip?.message} required>
+              <Input
                 {...register("nip")}
-                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#003399] outline-none"
                 placeholder="198001012010011001"
+                className="h-11"
               />
-              {errors.nip && (
-                <p className="text-red-500 text-xs mt-1">{errors.nip.message}</p>
-              )}
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Nama Lengkap *</label>
-              <input
+            </FormField>
+            <FormField label="Nama Lengkap" error={errors.nama?.message} required>
+              <Input
                 {...register("nama")}
-                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#003399] outline-none"
                 placeholder="Nama pegawai"
+                className="h-11"
               />
-              {errors.nama && (
-                <p className="text-red-500 text-xs mt-1">{errors.nama.message}</p>
-              )}
-            </div>
+            </FormField>
           </div>
 
-          <div className="grid grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-medium mb-1">Jenis Kelamin *</label>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <FormField label="Jenis Kelamin" error={errors.jenisKelaminId?.message} required>
               <select
                 {...register("jenisKelaminId")}
-                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#003399] outline-none"
+                className="w-full px-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#003399] outline-none"
               >
-                <option value="">Pilih</option>
+                <option value="">Pilih jenis kelamin</option>
                 {jenisKelaminList.map((item) => (
                   <option key={item.id} value={item.id}>
                     {item.label}
                   </option>
                 ))}
               </select>
-              {errors.jenisKelaminId && (
-                <p className="text-red-500 text-xs mt-1">{errors.jenisKelaminId.message}</p>
-              )}
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Tempat Lahir *</label>
-              <input
+            </FormField>
+            <FormField label="Tempat Lahir" error={errors.tempatLahir?.message} required>
+              <Input
                 {...register("tempatLahir")}
-                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#003399] outline-none"
                 placeholder="Jakarta"
+                className="h-11"
               />
-              {errors.tempatLahir && (
-                <p className="text-red-500 text-xs mt-1">{errors.tempatLahir.message}</p>
-              )}
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Tanggal Lahir *</label>
-              <input
+            </FormField>
+            <FormField label="Tanggal Lahir" error={errors.tanggalLahir?.message} required>
+              <Input
                 type="date"
                 {...register("tanggalLahir")}
-                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#003399] outline-none"
+                className="h-11"
               />
-              {errors.tanggalLahir && (
-                <p className="text-red-500 text-xs mt-1">{errors.tanggalLahir.message}</p>
-              )}
-            </div>
+            </FormField>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow p-6 space-y-6">
-          <h2 className="text-lg font-semibold border-b pb-2">Data Pribadi</h2>
+        {/* Data Pribadi */}
+        <div className="bg-white rounded-xl shadow-md p-6 border border-slate-200 space-y-6">
+          <h2 className="text-lg font-semibold text-slate-900 border-b pb-3">
+            👤 Data Pribadi
+          </h2>
 
-          <div className="grid grid-cols-4 gap-4">
-            <div>
-              <label className="block text-sm font-medium mb-1">Agama *</label>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <FormField label="Agama" error={errors.agamaId?.message} required>
               <select
                 {...register("agamaId")}
-                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#003399] outline-none"
+                className="w-full px-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#003399] outline-none"
               >
-                <option value="">Pilih</option>
+                <option value="">Pilih agama</option>
                 {agamaList.map((item) => (
                   <option key={item.id} value={item.id}>
                     {item.label}
                   </option>
                 ))}
               </select>
-              {errors.agamaId && (
-                <p className="text-red-500 text-xs mt-1">{errors.agamaId.message}</p>
-              )}
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Status Perkawinan *</label>
+            </FormField>
+            <FormField label="Status Perkawinan" error={errors.statusPerkawinanId?.message} required>
               <select
                 {...register("statusPerkawinanId")}
-                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#003399] outline-none"
+                className="w-full px-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#003399] outline-none"
               >
-                <option value="">Pilih</option>
+                <option value="">Pilih status perkawinan</option>
                 {statusPerkawinanList.map((item) => (
                   <option key={item.id} value={item.id}>
                     {item.label}
                   </option>
                 ))}
               </select>
-              {errors.statusPerkawinanId && (
-                <p className="text-red-500 text-xs mt-1">{errors.statusPerkawinanId.message}</p>
-              )}
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">No. HP</label>
-              <input
-                {...register("noHp")}
-                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#003399] outline-none"
-                placeholder="081234567890"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Email</label>
-              <input
-                {...register("email")}
-                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#003399] outline-none"
-                placeholder="email@example.com"
-              />
-              {errors.email && (
-                <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>
-              )}
-            </div>
+            </FormField>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium mb-1">Alamat *</label>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <FormField label="No. HP" error={errors.noHp?.message}>
+              <Input
+                {...register("noHp")}
+                placeholder="081234567890"
+                className="h-11"
+              />
+            </FormField>
+            <FormField label="Email" error={errors.email?.message}>
+              <Input
+                {...register("email")}
+                type="email"
+                placeholder="email@example.com"
+                className="h-11"
+              />
+            </FormField>
+          </div>
+
+          <FormField label="Alamat" error={errors.alamat?.message} required>
             <textarea
               {...register("alamat")}
-              className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#003399] outline-none"
-              rows={3}
               placeholder="Alamat lengkap"
+              rows={3}
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#003399] outline-none resize-none"
             />
-            {errors.alamat && (
-              <p className="text-red-500 text-xs mt-1">{errors.alamat.message}</p>
-            )}
-          </div>
+          </FormField>
         </div>
 
-        <div className="bg-white rounded-lg shadow p-6 space-y-6">
-          <h2 className="text-lg font-semibold border-b pb-2">Data Kepegawaian</h2>
+        {/* Data Kepegawaian */}
+        <div className="bg-white rounded-xl shadow-md p-6 border border-slate-200 space-y-6">
+          <h2 className="text-lg font-semibold text-slate-900 border-b pb-3">
+            💼 Data Kepegawaian
+          </h2>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium mb-1">Pendidikan Terakhir *</label>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <FormField label="Pendidikan Terakhir" error={errors.pendidikanTerakhirId?.message} required>
               <select
                 {...register("pendidikanTerakhirId")}
-                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#003399] outline-none"
+                className="w-full px-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#003399] outline-none"
               >
-                <option value="">Pilih</option>
+                <option value="">Pilih pendidikan</option>
                 {pendidikanList.map((item) => (
                   <option key={item.id} value={item.id}>
                     {item.label}
                   </option>
                 ))}
               </select>
-              {errors.pendidikanTerakhirId && (
-                <p className="text-red-500 text-xs mt-1">{errors.pendidikanTerakhirId.message}</p>
-              )}
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Unit Kerja / Penempatan *</label>
+            </FormField>
+            <FormField label="Unit Kerja" error={errors.unitKerjaId?.message} required>
               <select
                 {...register("unitKerjaId")}
-                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#003399] outline-none"
+                className="w-full px-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#003399] outline-none"
               >
-                <option value="">Pilih</option>
+                <option value="">Pilih unit kerja</option>
                 {unitKerjaList.map((item) => (
                   <option key={item.id} value={item.id}>
                     {item.label}
                   </option>
                 ))}
               </select>
-              {errors.unitKerjaId && (
-                <p className="text-red-500 text-xs mt-1">{errors.unitKerjaId.message}</p>
-              )}
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Status Pegawai *</label>
-              <select
-                {...register("statusPegawaiId")}
-                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#003399] outline-none"
-              >
-                <option value="">Pilih</option>
-                {statusPegawaiList.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.label}
-                  </option>
-                ))}
-              </select>
-              {errors.statusPegawaiId && (
-                <p className="text-red-500 text-xs mt-1">{errors.statusPegawaiId.message}</p>
-              )}
-            </div>
+            </FormField>
           </div>
+
+          <FormField label="Status Pegawai" error={errors.statusPegawaiId?.message} required>
+            <select
+              {...register("statusPegawaiId")}
+              className="w-full px-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#003399] outline-none"
+            >
+              <option value="">Pilih status pegawai</option>
+              {statusPegawaiList.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.label}
+                </option>
+              ))}
+            </select>
+          </FormField>
         </div>
 
+        {/* Actions */}
         <div className="flex gap-4">
-          <button
+          <Button
             type="submit"
             disabled={loading}
-            className="flex-1 bg-[#003399] text-white py-3 rounded-lg hover:bg-[#002266] transition disabled:opacity-50"
+            className="flex-1 bg-[#003399] hover:bg-[#002266] text-white font-semibold h-12"
           >
-            {loading ? "Menyimpan..." : "Simpan Pegawai"}
-          </button>
-          <button
+            {loading ? "Menyimpan..." : "💾 Simpan Pegawai"}
+          </Button>
+          <Button
             type="button"
             onClick={() => router.push("/pegawai")}
-            className="flex-1 border border-gray-300 text-gray-700 py-3 rounded-lg hover:bg-gray-50 transition"
+            variant="outline"
+            className="flex-1 h-12 font-semibold"
           >
             Batal
-          </button>
+          </Button>
         </div>
       </form>
     </div>

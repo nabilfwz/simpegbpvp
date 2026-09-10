@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { Button } from "@/app/components/ui/button";
+import { Input } from "@/app/components/ui/input";
 
 interface Pegawai {
   id: string;
@@ -94,23 +96,25 @@ export default function PegawaiPage() {
   };
 
   return (
-    <div className="p-6">
-      <div className="mb-6 flex justify-between items-center">
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-[#003399]">Manajemen Pegawai</h1>
-          <p className="text-gray-600 mt-1">Daftar pegawai dan informasi kepegawaian</p>
+          <h1 className="text-3xl font-bold text-slate-900">Data Pegawai</h1>
+          <p className="text-slate-600 mt-1">Kelola data pegawai dan informasi kepegawaian</p>
         </div>
-        <button
+        <Button
           onClick={() => router.push("/pegawai/tambah")}
-          className="bg-[#003399] text-white px-4 py-2 rounded-lg hover:bg-[#002266] transition"
+          className="bg-[#003399] hover:bg-[#002266] text-white font-semibold h-11 px-6"
         >
           + Tambah Pegawai
-        </button>
+        </Button>
       </div>
 
-      <div className="bg-white rounded-lg shadow p-4 mb-6 space-y-4">
-        <div className="flex flex-col md:flex-row gap-4">
-          <input
+      {/* Filters */}
+      <div className="bg-white rounded-xl shadow-md p-4 border border-slate-200 space-y-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+          <Input
             type="text"
             placeholder="Cari nama atau NIP..."
             value={search}
@@ -118,7 +122,7 @@ export default function PegawaiPage() {
               setSearch(e.target.value);
               fetchData(1);
             }}
-            className="flex-1 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#003399] outline-none"
+            className="h-11"
           />
           <select
             value={unitKerja}
@@ -126,7 +130,7 @@ export default function PegawaiPage() {
               setUnitKerja(e.target.value);
               fetchData(1);
             }}
-            className="px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#003399] outline-none"
+            className="px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#003399] outline-none h-11"
           >
             <option value="">Semua Unit Kerja</option>
             {unitKerjaList.map((u) => (
@@ -141,7 +145,7 @@ export default function PegawaiPage() {
               setStatusPegawai(e.target.value);
               fetchData(1);
             }}
-            className="px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#003399] outline-none"
+            className="px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#003399] outline-none h-11"
           >
             <option value="">Semua Status</option>
             {statusPegawaiList.map((s) => (
@@ -156,7 +160,7 @@ export default function PegawaiPage() {
               setJenisKelamin(e.target.value);
               fetchData(1);
             }}
-            className="px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#003399] outline-none"
+            className="px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#003399] outline-none h-11"
           >
             <option value="">Semua Jenis Kelamin</option>
             {jenisKelaminList.map((j) => (
@@ -168,95 +172,103 @@ export default function PegawaiPage() {
         </div>
       </div>
 
+      {/* Table */}
       {loading ? (
-        <div className="text-center py-8 text-gray-500">Memuat data...</div>
+        <div className="text-center py-12 text-slate-500">Memuat data...</div>
       ) : (
-        <div className="bg-white rounded-lg shadow overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Foto</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">NIP</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Nama</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Jenis Kelamin</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Penempatan</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Jabatan</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Pangkat</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Status</th>
-                <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Aksi</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {pegawais.length === 0 ? (
+        <div className="bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-slate-50 border-b border-slate-200">
                 <tr>
-                  <td colSpan={9} className="px-4 py-8 text-center text-gray-500">
-                    Belum ada pegawai
-                  </td>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Foto</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">NIP</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Nama</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Jenis Kelamin</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Penempatan</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Jabatan</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Pangkat</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Status</th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase">Aksi</th>
                 </tr>
-              ) : (
-                pegawais.map((p) => (
-                  <tr key={p.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3">
-                      {p.fotoUrl ? (
-                        <img src={p.fotoUrl} className="w-10 h-10 rounded-full object-cover" alt="" />
-                      ) : (
-                        <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 text-xs">
-                          ?
-                        </div>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-sm font-mono">{p.nip}</td>
-                    <td className="px-4 py-3 text-sm font-medium">{p.nama}</td>
-                    <td className="px-4 py-3 text-sm">{p.jenisKelamin.label}</td>
-                    <td className="px-4 py-3 text-sm">{p.unitKerja.label}</td>
-                    <td className="px-4 py-3 text-sm">
-                      {p.riwayatJabatan[0]?.jabatan?.label || "-"}
-                    </td>
-                    <td className="px-4 py-3 text-sm">
-                      {p.riwayatPangkat[0]?.pangkatGolongan?.label || "-"}
-                    </td>
-                    <td className="px-4 py-3 text-sm">{p.statusPegawai.label}</td>
-                    <td className="px-4 py-3 text-right space-x-2">
-                      <button
-                        onClick={() => router.push(`/pegawai/${p.id}`)}
-                        className="text-[#003399] hover:underline text-sm"
-                      >
-                        Detail
-                      </button>
-                      <button
-                        onClick={() => handleDelete(p.id)}
-                        className="text-red-600 hover:underline text-sm"
-                      >
-                        Nonaktifkan
-                      </button>
+              </thead>
+              <tbody className="divide-y divide-slate-200">
+                {pegawais.length === 0 ? (
+                  <tr>
+                    <td colSpan={9} className="px-4 py-8 text-center text-slate-500">
+                      Belum ada pegawai
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                ) : (
+                  pegawais.map((p) => (
+                    <tr key={p.id} className="hover:bg-slate-50 transition">
+                      <td className="px-4 py-3">
+                        {p.fotoUrl ? (
+                          <img src={p.fotoUrl} className="w-10 h-10 rounded-full object-cover border border-slate-200" alt="" />
+                        ) : (
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-slate-300 to-slate-400 flex items-center justify-center text-white text-xs font-bold">
+                            {p.nama.charAt(0).toUpperCase()}
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-sm font-mono text-slate-900 font-semibold">{p.nip}</td>
+                      <td className="px-4 py-3 text-sm font-medium text-slate-900">{p.nama}</td>
+                      <td className="px-4 py-3 text-sm text-slate-600">{p.jenisKelamin.label}</td>
+                      <td className="px-4 py-3 text-sm text-slate-600">{p.unitKerja.label}</td>
+                      <td className="px-4 py-3 text-sm text-slate-600">
+                        {p.riwayatJabatan[0]?.jabatan?.label || "-"}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-slate-600">
+                        {p.riwayatPangkat[0]?.pangkatGolongan?.label || "-"}
+                      </td>
+                      <td className="px-4 py-3 text-sm">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">
+                          {p.statusPegawai.label}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-right space-x-2">
+                        <button
+                          onClick={() => router.push(`/pegawai/${p.id}`)}
+                          className="text-[#003399] hover:text-[#002266] font-semibold text-sm transition"
+                        >
+                          Lihat
+                        </button>
+                        <button
+                          onClick={() => handleDelete(p.id)}
+                          className="text-red-600 hover:text-red-700 font-semibold text-sm transition"
+                        >
+                          Hapus
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
+      {/* Pagination */}
       {pagination.totalPages > 1 && (
-        <div className="flex justify-center gap-2 mt-4">
-          <button
+        <div className="flex justify-center gap-2">
+          <Button
             onClick={() => fetchData(pagination.page - 1)}
             disabled={pagination.page === 1}
-            className="px-3 py-1 border rounded-lg disabled:opacity-50 hover:bg-gray-50"
+            variant="outline"
           >
-            Sebelumnya
-          </button>
-          <span className="px-4 py-1 text-sm">
+            ← Sebelumnya
+          </Button>
+          <span className="px-4 py-2 text-sm text-slate-700">
             Halaman {pagination.page} dari {pagination.totalPages}
           </span>
-          <button
+          <Button
             onClick={() => fetchData(pagination.page + 1)}
             disabled={pagination.page === pagination.totalPages}
-            className="px-3 py-1 border rounded-lg disabled:opacity-50 hover:bg-gray-50"
+            variant="outline"
           >
-            Selanjutnya
-          </button>
+            Selanjutnya →
+          </Button>
         </div>
       )}
     </div>
