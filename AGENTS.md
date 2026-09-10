@@ -1,9 +1,60 @@
-<!-- BEGIN:nextjs-agent-rules -->
+# AGENTS.md — Manajemen Pegawai BPVP
 
-# This is NOT the Next.js you know
+File ini dibaca otomatis oleh OpenCode di setiap sesi. Isinya adalah aturan permanen & konteks proyek — jangan dihapus, update kalau ada perubahan keputusan desain.
 
-This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+## Tentang Proyek
+Aplikasi web "Manajemen Pegawai BPVP". Tema visual: identitas Kemnaker (navy #003399 + putih, aksen kuning/emas, tipografi formal instansi, layout sidebar).
 
-This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+## Tech Stack (final, jangan diganti tanpa alasan kuat)
+- Next.js 14+, App Router, TypeScript
+- Prisma ORM + PostgreSQL
+- Tailwind CSS + shadcn/ui
+- NextAuth.js (credentials), role: `admin`, `operator`
+- Zod + React Hook Form
 
-<!-- END:nextjs-agent-rules -->
+## Aturan Wajib (berlaku di semua task, jangan dilanggar)
+0. **Semua command shell WAJIB non-interaktif.** Jangan pernah menjalankan command yang bisa menunggu konfirmasi user (y/n, pilihan menu, dsb) — ini akan menggantung tanpa batas karena tidak ada yang menjawab. Wajib:
+   - `npx` → selalu tambahkan `-y` atau `--yes` (contoh: `npx -y create-next-app@latest .`, `npx -y shadcn@latest init`, `npx -y prisma init`).
+   - `create-next-app` → gunakan flag non-interaktif lengkap (`--ts --tailwind --eslint --app --src-dir=false --import-alias "@/*" --use-npm` atau sesuai package manager, jangan biarkan wizard tanya-tanya).
+   - `shadcn` CLI → tambahkan flag `-y` / `--defaults` kalau tersedia.
+   - `npm install` / `pnpm install` → jangan pakai flag yang memicu prompt (hindari mode audit-fix interaktif).
+   - Command `git` yang bisa buka editor (misal `git commit` tanpa `-m`) → selalu sertakan pesan lewat flag, jangan andalkan editor interaktif.
+   - Sebelum menjalankan command baru yang berpotensi interaktif, cek dokumentasi flag non-interaktifnya dulu, jangan coba-coba lalu menggantung.
+   - Kalau sebuah command tetap menggantung >30 detik tanpa output jelas, anggap itu tanda command sedang menunggu input — hentikan dan cari flag non-interaktifnya, jangan diulang persis sama.
+1. **Tidak boleh ada dropdown/opsi hardcode di kode.** Semua opsi (pangkat/golongan, jabatan, unit kerja, pendidikan, agama, status pegawai, status perkawinan, jenis kelamin) HARUS diambil dari tabel `MasterData` via API `/api/master-data?kategori=...`.
+2. **Semua create/update/delete WAJIB tercatat ke `LogAktivitas`** lewat helper terpusat `lib/log-aktivitas.ts`. Jangan duplikasi logic pencatatan log di tiap route API.
+3. **Soft delete**, bukan hard delete, untuk data yang punya relasi (Pegawai, MasterData) — pakai field `aktif`.
+4. **Validasi server wajib** (Zod) di setiap route API, tidak cukup validasi client.
+5. Form "Tambah Pegawai" HANYA berisi data demografi + NIP + alamat + penempatan. Riwayat pangkat & riwayat jabatan HANYA bisa diisi dari halaman Detail Pegawai, tidak ada di form tambah.
+
+## Skema Data (referensi — lihat prisma/schema.prisma sebagai source of truth aktual)
+- `MasterData`: id, kategori, kode?, label, urutan, aktif, timestamps
+- `Pegawai`: id, nip, nama, jenisKelaminId, tempatLahir, tanggalLahir, agamaId, statusPerkawinanId, alamat, noHp?, email?, pendidikanTerakhirId, unitKerjaId, statusPegawaiId, fotoUrl?, aktif, timestamps
+- `RiwayatPangkat`: id, pegawaiId, pangkatGolonganId, tmt, noSk?, tanggalSk?, keterangan?
+- `RiwayatJabatan`: id, pegawaiId, jabatanId, unitKerjaId, tmt, noSk?, tanggalSk?, keterangan?
+- `User`: id, nama, email, password, role, aktif
+- `LogAktivitas`: id, userId, aksi, entitas, entitasId, deskripsi, dataSebelum?, dataSesudah?, ipAddress?, createdAt
+
+## Status Progress (UPDATE bagian ini setiap kali sebuah task selesai)
+- [x] Task 1 — Inisialisasi proyek
+- [x] Task 2 — Schema Prisma + migration + seed
+- [x] Task 3 — Auth & middleware
+- [x] Task 4 — Helper log aktivitas
+- [x] Task 5 — CRUD Master Data (admin)
+- [x] Task 6 — Fitur Pegawai (daftar, tambah, detail + riwayat pangkat/jabatan)
+- [x] Task 7 — Log Aktivitas (halaman admin)
+- [x] Task 8 — Manajemen User (admin)
+- [x] Task 9 — Dashboard
+- [ ] Task 10 — Polish, build, README
+
+> Catatan: sebelum mulai task baru, **selalu cek dulu kondisi file yang sudah ada** (jangan asumsi kosong). Kalau ada bagian dari task sebelumnya yang ternyata belum lengkap/error, perbaiki dulu sebelum lanjut.
+
+## Kredensial Default (dev/seed)
+- Admin: `admin@bpvp.local` / `admin123` (ubah kalau sudah beda di seed.ts yang sebenarnya)
+
+## Definition of Done per Task
+Sebuah task dianggap selesai kalau:
+- Kode jalan tanpa error (`next build` tidak gagal karena bagian itu)
+- Tidak ada hardcode dropdown
+- Log aktivitas tercatat untuk aksi tulis
+- Halaman terkait bisa diakses sesuai role yang benar

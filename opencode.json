@@ -1,0 +1,21 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "provider": {
+    "9router": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "9Router",
+      "options": {
+        "baseURL": "http://127.0.0.1:20128/v1",
+        "apiKey": "sk-1b2238b926020fc8-j6wvx0-56490a8a"
+      },
+      "models": {
+        "gemini/gemini-3.8-flash": {
+          "name": "gemini/gemini-3.8-flash"
+        },
+        "combo": {
+          "name": "Combo"
+        }
+      }
+    }
+  }
+}
