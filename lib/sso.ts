@@ -31,9 +31,7 @@ export interface BpvpApp {
   isCurrent?: boolean;
 }
 
-const SSO_BASE_URL =
-  process.env.NEXT_PUBLIC_SSO_URL ||
-  (process.env.NODE_ENV === "production" ? "https://sso-bpvp.vercel.app" : "http://localhost:3001");
+const SSO_BASE_URL = process.env.NEXT_PUBLIC_SSO_URL || "https://sso-bpvp.vercel.app";
 
 export const BPVP_ECOSYSTEM_APPS: BpvpApp[] = [
   {
