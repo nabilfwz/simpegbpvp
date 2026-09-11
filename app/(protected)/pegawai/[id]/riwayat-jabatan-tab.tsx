@@ -59,60 +59,64 @@ export default function RiwayatJabatanTab({ pegawaiId }: { pegawaiId: string }) 
   return (
     <div>
       <div className="flex justify-between items-center mb-4">
-        <h3 className="font-semibold">Riwayat Jabatan</h3>
+        <h3 className="font-bold text-slate-800 text-base">Riwayat Jabatan</h3>
         <button
           onClick={() => {
             setEditingItem(null);
             setDialogOpen(true);
           }}
-          className="bg-[#003399] text-white px-3 py-1 rounded-lg text-sm hover:bg-[#002266]"
+          className="bg-[#003399] text-white px-3.5 py-1.5 rounded-lg text-xs font-bold hover:bg-[#002266] shadow-sm border border-[#002266] transition flex items-center gap-1"
         >
-          + Tambah
+          + Tambah Riwayat
         </button>
       </div>
 
       {loading ? (
-        <div className="text-center py-4 text-gray-500">Memuat data...</div>
+        <div className="text-center py-6 text-slate-500 text-sm">Memuat data...</div>
       ) : riwayat.length === 0 ? (
-        <div className="text-center py-4 text-gray-500">Belum ada riwayat jabatan</div>
+        <div className="text-center py-8 text-slate-500 text-sm bg-slate-50 rounded-xl border border-dashed border-slate-300">
+          Belum ada riwayat jabatan tercatat
+        </div>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50">
+        <div className="overflow-x-auto border-2 border-slate-200 rounded-xl">
+          <table className="w-full text-xs">
+            <thead className="bg-slate-100 border-b border-slate-200">
               <tr>
-                <th className="px-3 py-2 text-left">TMT</th>
-                <th className="px-3 py-2 text-left">Jabatan</th>
-                <th className="px-3 py-2 text-left">Unit Kerja</th>
-                <th className="px-3 py-2 text-left">No. SK</th>
-                <th className="px-3 py-2 text-left">Tgl. SK</th>
-                <th className="px-3 py-2 text-left">Keterangan</th>
-                <th className="px-3 py-2 text-right">Aksi</th>
+                <th className="px-3.5 py-2.5 text-left font-bold text-slate-700 uppercase">TMT</th>
+                <th className="px-3.5 py-2.5 text-left font-bold text-slate-700 uppercase">Jabatan</th>
+                <th className="px-3.5 py-2.5 text-left font-bold text-slate-700 uppercase">Unit Kerja</th>
+                <th className="px-3.5 py-2.5 text-left font-bold text-slate-700 uppercase">No. SK</th>
+                <th className="px-3.5 py-2.5 text-left font-bold text-slate-700 uppercase">Tgl. SK</th>
+                <th className="px-3.5 py-2.5 text-left font-bold text-slate-700 uppercase">Keterangan</th>
+                <th className="px-3.5 py-2.5 text-right font-bold text-slate-700 uppercase">Aksi</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
+            <tbody className="divide-y divide-slate-200 bg-white">
               {riwayat.map((item) => (
-                <tr key={item.id} className="hover:bg-gray-50">
-                  <td className="px-3 py-2">{new Date(item.tmt).toLocaleDateString("id-ID")}</td>
-                  <td className="px-3 py-2 font-medium">{item.jabatan.label}</td>
-                  <td className="px-3 py-2">{item.unitKerja.label}</td>
-                  <td className="px-3 py-2">{item.noSk || "-"}</td>
-                  <td className="px-3 py-2">
+                <tr key={item.id} className="hover:bg-slate-50/50">
+                  <td className="px-3.5 py-2.5 font-mono font-medium text-slate-800">
+                    {new Date(item.tmt).toLocaleDateString("id-ID")}
+                  </td>
+                  <td className="px-3.5 py-2.5 font-bold text-slate-900">{item.jabatan.label}</td>
+                  <td className="px-3.5 py-2.5 text-slate-800 font-medium">{item.unitKerja.label}</td>
+                  <td className="px-3.5 py-2.5 text-slate-700 font-mono">{item.noSk || "-"}</td>
+                  <td className="px-3.5 py-2.5 text-slate-700">
                     {item.tanggalSk ? new Date(item.tanggalSk).toLocaleDateString("id-ID") : "-"}
                   </td>
-                  <td className="px-3 py-2">{item.keterangan || "-"}</td>
-                  <td className="px-3 py-2 text-right">
+                  <td className="px-3.5 py-2.5 text-slate-600">{item.keterangan || "-"}</td>
+                  <td className="px-3.5 py-2.5 text-right whitespace-nowrap">
                     <button
                       onClick={() => {
                         setEditingItem(item);
                         setDialogOpen(true);
                       }}
-                      className="text-[#003399] hover:underline mr-3"
+                      className="px-2.5 py-1 text-xs font-bold rounded-md bg-blue-50 text-[#003399] border-2 border-blue-200 hover:bg-[#003399] hover:text-white transition mr-2"
                     >
                       Edit
                     </button>
                     <button
                       onClick={() => handleDelete(item.id)}
-                      className="text-red-600 hover:underline"
+                      className="px-2.5 py-1 text-xs font-bold rounded-md bg-rose-50 text-rose-800 border-2 border-rose-300 hover:bg-rose-700 hover:text-white transition"
                     >
                       Hapus
                     </button>
@@ -291,20 +295,20 @@ function RiwayatJabatanForm({
             />
           </div>
 
-          <div className="flex justify-end gap-2 pt-4">
+          <div className="flex justify-end gap-2.5 pt-4 border-t border-slate-200">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 border rounded-lg hover:bg-gray-50"
+              className="px-4 py-2 border-2 border-slate-300 rounded-lg hover:bg-slate-100 text-slate-700 font-bold text-xs transition"
             >
               Batal
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="px-4 py-2 bg-[#003399] text-white rounded-lg hover:bg-[#002266] disabled:opacity-50"
+              className="px-5 py-2 bg-[#003399] text-white rounded-lg hover:bg-[#002266] font-bold text-xs shadow-sm border border-[#002266] transition disabled:opacity-50"
             >
-              {loading ? "Menyimpan..." : "Simpan"}
+              {loading ? "Menyimpan..." : "Simpan Riwayat Jabatan"}
             </button>
           </div>
         </form>

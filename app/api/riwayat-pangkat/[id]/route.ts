@@ -29,6 +29,7 @@ export async function PATCH(
 
     const existing = await prisma.riwayatPangkat.findUnique({
       where: { id },
+      include: { pangkatGolongan: true },
     });
 
     if (!existing) {

@@ -3,7 +3,7 @@ import { NextRequest } from "next/server";
 
 export interface CatatLogParams {
   userId: string;
-  aksi: "CREATE" | "UPDATE" | "DELETE";
+  aksi: "CREATE" | "UPDATE" | "DELETE" | "RESTORE" | "LOGIN" | "LOGOUT" | string;
   entitas: "MasterData" | "Pegawai" | "RiwayatPangkat" | "RiwayatJabatan" | "User" | string;
   entitasId: string;
   deskripsi: string;

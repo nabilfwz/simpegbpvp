@@ -5,26 +5,36 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 import { Button } from "@/app/components/ui/button";
+import { BrandLogo } from "@/app/components/brand-logo";
+import { AppSwitcher } from "@/app/components/app-switcher";
 
 export function Sidebar() {
   const pathname = usePathname();
   const { data: session } = useSession();
-  const [open, setOpen] = useState(true);
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 768);
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-    return () => window.removeEventListener("resize", checkMobile);
-  }, []);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [desktopCollapsed, setDesktopCollapsed] = useState(false);
 
   // Close sidebar on mobile when route changes
   useEffect(() => {
-    if (isMobile) setOpen(false);
-  }, [pathname, isMobile]);
+    setMobileOpen(false);
+  }, [pathname]);
 
   const isAdmin = (session?.user as any)?.role === "admin";
+  const [trashCount, setTrashCount] = useState<number>(0);
+
+  // Fetch trash count for admin badge
+  useEffect(() => {
+    if (isAdmin) {
+      fetch("/api/pegawai?trash=true&limit=1")
+        .then((res) => res.json())
+        .then((data) => {
+          if (data?.pagination?.total !== undefined) {
+            setTrashCount(data.pagination.total);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [isAdmin, pathname]);
 
   const navigationItems = [
     { href: "/", label: "Dashboard", icon: "📊" },
@@ -35,6 +45,7 @@ export function Sidebar() {
     { href: "/admin/master-data", label: "Master Data", icon: "⚙️" },
     { href: "/admin/users", label: "Manajemen User", icon: "👤" },
     { href: "/admin/log-aktivitas", label: "Log Aktivitas", icon: "📋" },
+    { href: "/admin/tong-sampah", label: "Tong Sampah Pegawai", icon: "🗑️", badge: trashCount },
   ];
 
   const isActive = (href: string) => {
@@ -44,107 +55,162 @@ export function Sidebar() {
 
   return (
     <>
-      {/* Mobile Overlay */}
-      {isMobile && open && (
+      {/* Mobile Topbar (Visible on screens < 768px, Burger on LEFT) */}
+      <header className="md:hidden fixed top-0 left-0 right-0 h-14 bg-white border-b border-slate-200 z-30 flex items-center justify-between px-3 shadow-xs">
+        {/* Left: Burger Button & Brand Logo */}
+        <div className="flex items-center gap-2 min-w-0">
+          <button
+            type="button"
+            onClick={() => setMobileOpen(!mobileOpen)}
+            className="p-2 text-slate-700 hover:bg-slate-100 rounded-lg transition active:scale-95 shrink-0"
+            aria-label="Buka Menu Navigasi"
+          >
+            <span className="text-xl leading-none">☰</span>
+          </button>
+          <BrandLogo size="sm" showText={true} />
+        </div>
+
+        {/* Right: AppSwitcher & User Avatar Pill */}
+        <div className="flex items-center gap-1.5 shrink-0">
+          <AppSwitcher />
+          {session?.user && (
+            <div
+              className="w-8 h-8 rounded-full bg-[#003399]/10 border border-[#003399]/20 flex items-center justify-center text-[#003399] font-bold text-xs uppercase shadow-2xs"
+              title={session.user.name || "User"}
+            >
+              {session.user.name?.slice(0, 2) || "BP"}
+            </div>
+          )}
+        </div>
+      </header>
+
+      {/* Mobile Backdrop Overlay with blur */}
+      {mobileOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-30"
-          onClick={() => setOpen(false)}
+          className="md:hidden fixed inset-0 bg-black/40 z-40 cursor-pointer backdrop-blur-xs transition-opacity duration-300"
+          onClick={() => setMobileOpen(false)}
         />
       )}
 
-      {/* Sidebar */}
+      {/* Sidebar (Fixed on left, sleek responsive drawer on mobile) */}
       <aside
-        className={`fixed left-0 top-0 h-screen bg-white border-r border-slate-200 text-slate-900 transition-all duration-300 z-40 ${
-          open ? "w-64" : "w-20"
-        } ${isMobile && !open ? "-translate-x-full" : ""}`}
+        className={`fixed left-0 top-0 h-screen bg-white border-r border-slate-200 text-slate-900 transition-all duration-300 z-50 md:z-30 flex flex-col shadow-xl md:shadow-none ${
+          desktopCollapsed ? "md:w-20" : "md:w-64"
+        } w-72 max-w-[82vw] ${
+          mobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+        }`}
       >
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-slate-200">
-          {open && (
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-[#003399] to-[#0055cc] rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-xs">BPVP</span>
-              </div>
-              <span className="font-bold text-slate-900">SIMPEG</span>
-            </div>
-          )}
+        {/* Sidebar Header */}
+        <div className="flex items-center justify-between px-4 border-b border-slate-200 h-16 bg-slate-50/50">
+          <BrandLogo size="sm" showText={!desktopCollapsed || mobileOpen} />
           <button
-            onClick={() => setOpen(!open)}
-            className="p-2 hover:bg-slate-100 rounded-lg transition"
-            title={open ? "Close" : "Open"}
+            type="button"
+            onClick={() => {
+              if (window.innerWidth < 768) {
+                setMobileOpen(false);
+              } else {
+                setDesktopCollapsed(!desktopCollapsed);
+              }
+            }}
+            className="p-1.5 hover:bg-slate-200/70 rounded-lg text-slate-600 transition shrink-0 ml-1"
+            title={desktopCollapsed ? "Perluas Sidebar" : "Perkecil / Tutup Sidebar"}
           >
-            {open ? "←" : "→"}
+            {mobileOpen ? (
+              <span className="text-xl font-bold leading-none px-1">&times;</span>
+            ) : desktopCollapsed ? (
+              "→"
+            ) : (
+              "←"
+            )}
           </button>
         </div>
 
-        {/* Navigation */}
-        <nav className="p-4 space-y-2 overflow-y-auto h-[calc(100vh-150px)]">
+        {/* Navigation Links */}
+        <nav className="p-3 space-y-6 flex-1 overflow-y-auto">
           {/* Main Menu */}
-          <div className="mb-6">
-            {open && (
-              <p className="text-xs uppercase font-semibold text-slate-500 mb-3 px-3">
+          <div>
+            {(!desktopCollapsed || mobileOpen) && (
+              <p className="text-[11px] uppercase tracking-wider font-semibold text-slate-400 mb-2 px-3">
                 Menu Utama
               </p>
             )}
             <div className="space-y-1">
-              {navigationItems.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`flex items-center gap-3 px-3 py-3 rounded-lg transition ${
-                    isActive(item.href)
-                      ? "bg-blue-50 text-[#003399] border-l-4 border-[#003399] font-semibold"
-                      : "text-slate-700 hover:bg-slate-50"
-                  }`}
-                >
-                  <span className="text-lg flex-shrink-0">{item.icon}</span>
-                  {open && <span className="text-sm">{item.label}</span>}
-                </Link>
-              ))}
+              {navigationItems.map((item) => {
+                const active = isActive(item.href);
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition text-sm font-medium ${
+                      active
+                        ? "bg-blue-50 text-[#003399] font-semibold shadow-xs"
+                        : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                    }`}
+                  >
+                    <span className="text-lg flex-shrink-0">{item.icon}</span>
+                    {(!desktopCollapsed || mobileOpen) && <span>{item.label}</span>}
+                  </Link>
+                );
+              })}
             </div>
           </div>
 
           {/* Admin Menu */}
           {isAdmin && (
             <div>
-              {open && (
-                <p className="text-xs uppercase font-semibold text-slate-500 mb-3 px-3">
+              {(!desktopCollapsed || mobileOpen) && (
+                <p className="text-[11px] uppercase tracking-wider font-semibold text-slate-400 mb-2 px-3">
                   Administrator
                 </p>
               )}
               <div className="space-y-1">
-                {adminItems.map((item) => (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={`flex items-center gap-3 px-3 py-3 rounded-lg transition ${
-                      isActive(item.href)
-                        ? "bg-blue-50 text-[#003399] border-l-4 border-[#003399] font-semibold"
-                        : "text-slate-700 hover:bg-slate-50"
-                    }`}
-                  >
-                    <span className="text-lg flex-shrink-0">{item.icon}</span>
-                    {open && <span className="text-sm">{item.label}</span>}
-                  </Link>
-                ))}
+                {adminItems.map((item) => {
+                  const active = isActive(item.href);
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition text-sm font-medium ${
+                        active
+                          ? "bg-blue-50 text-[#003399] font-semibold shadow-xs"
+                          : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                      }`}
+                    >
+                      <span className="text-lg flex-shrink-0">{item.icon}</span>
+                      {(!desktopCollapsed || mobileOpen) && (
+                        <div className="flex items-center justify-between flex-1 min-w-0">
+                          <span className="truncate">{item.label}</span>
+                          {(item as any).badge !== undefined && (item as any).badge > 0 && (
+                            <span className="ml-2 px-2 py-0.2 bg-rose-100 text-rose-800 text-[10px] font-extrabold rounded-full border border-rose-300">
+                              {(item as any).badge}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </Link>
+                  );
+                })}
               </div>
             </div>
           )}
         </nav>
 
-        {/* Footer */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-slate-200 bg-white">
-          {open && (
-            <div className="mb-3 text-xs text-slate-600 truncate">
-              <p className="font-semibold text-slate-900">{session?.user?.name}</p>
-              <p className="text-slate-500">{(session?.user as any)?.role}</p>
+        {/* Footer with User Info & Logout */}
+        <div className="p-3 border-t border-slate-200 bg-slate-50/70">
+          {(!desktopCollapsed || mobileOpen) && session?.user && (
+            <div className="mb-3 px-2 py-1 truncate">
+              <p className="font-semibold text-slate-900 text-sm truncate">{session.user.name}</p>
+              <p className="text-xs text-slate-500 capitalize font-medium">
+                {(session.user as any)?.role || "User"}
+              </p>
             </div>
           )}
           <Button
             onClick={() => signOut({ callbackUrl: "/login" })}
-            className="w-full bg-red-600 hover:bg-red-700 text-white text-sm h-9 rounded-lg"
+            className="w-full bg-red-600 hover:bg-red-700 text-white text-xs font-semibold h-9 rounded-lg transition flex items-center justify-center gap-2 shadow-xs"
           >
-            {open ? "🚪 Logout" : "🚪"}
+            <span>🚪</span>
+            {(!desktopCollapsed || mobileOpen) && <span>Keluar</span>}
           </Button>
         </div>
       </aside>

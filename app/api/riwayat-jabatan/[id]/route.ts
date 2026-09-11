@@ -30,6 +30,7 @@ export async function PATCH(
 
     const existing = await prisma.riwayatJabatan.findUnique({
       where: { id },
+      include: { jabatan: true, unitKerja: true },
     });
 
     if (!existing) {

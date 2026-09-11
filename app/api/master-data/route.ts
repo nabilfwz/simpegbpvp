@@ -8,9 +8,10 @@ import { z } from "zod";
 const masterDataSchema = z.object({
   kategori: z.string().min(1),
   label: z.string().min(1),
-  kode: z.string().optional(),
+  kode: z.string().optional().nullable(),
   urutan: z.number().int().default(0),
   aktif: z.boolean().default(true),
+  parentId: z.string().optional().nullable(),
 });
 
 export async function GET(request: NextRequest) {
@@ -22,6 +23,7 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const kategori = searchParams.get("kategori");
+    const parentId = searchParams.get("parentId");
 
     if (!kategori) {
       return NextResponse.json(
@@ -30,8 +32,22 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    const where: any = { kategori, aktif: true };
+    if (parentId !== null) {
+      if (parentId === "null" || parentId === "") {
+        where.parentId = null;
+      } else {
+        where.parentId = parentId;
+      }
+    }
+
     const data = await prisma.masterData.findMany({
-      where: { kategori, aktif: true },
+      where,
+      include: {
+        parent: {
+          select: { id: true, label: true, kategori: true },
+        },
+      },
       orderBy: [{ urutan: "asc" }, { label: "asc" }],
     });
 
@@ -55,24 +71,31 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const validated = masterDataSchema.parse(body);
 
-    const existing = await prisma.masterData.findUnique({
+    const existing = await prisma.masterData.findFirst({
       where: {
-        kategori_label: {
-          kategori: validated.kategori,
-          label: validated.label,
-        },
+        kategori: validated.kategori,
+        label: validated.label,
+        parentId: validated.parentId || null,
+        aktif: true,
       },
     });
 
     if (existing) {
       return NextResponse.json(
-        { error: "Data dengan kategori dan label yang sama sudah ada" },
+        { error: "Data dengan kategori, parent, dan label yang sama sudah ada" },
         { status: 400 }
       );
     }
 
     const created = await prisma.masterData.create({
-      data: validated,
+      data: {
+        kategori: validated.kategori,
+        label: validated.label,
+        kode: validated.kode || null,
+        urutan: validated.urutan,
+        aktif: validated.aktif,
+        parentId: validated.parentId || null,
+      },
     });
 
     await catatLog({

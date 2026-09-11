@@ -7,9 +7,10 @@ import { z } from "zod";
 
 const updateSchema = z.object({
   label: z.string().min(1).optional(),
-  kode: z.string().optional(),
+  kode: z.string().optional().nullable(),
   urutan: z.number().int().optional(),
   aktif: z.boolean().optional(),
+  parentId: z.string().optional().nullable(),
 });
 
 export async function PATCH(
@@ -28,6 +29,7 @@ export async function PATCH(
 
     const existing = await prisma.masterData.findUnique({
       where: { id },
+      include: { parent: true },
     });
 
     if (!existing) {
@@ -38,17 +40,21 @@ export async function PATCH(
     }
 
     if (validated.label) {
+      const parentIdToCheck =
+        validated.parentId !== undefined ? validated.parentId : existing.parentId;
       const duplicate = await prisma.masterData.findFirst({
         where: {
           kategori: existing.kategori,
           label: validated.label,
+          parentId: parentIdToCheck || null,
           id: { not: id },
+          aktif: true,
         },
       });
 
       if (duplicate) {
         return NextResponse.json(
-          { error: "Label sudah digunakan dalam kategori ini" },
+          { error: "Label sudah digunakan dalam kategori dan parent ini" },
           { status: 400 }
         );
       }
@@ -57,6 +63,7 @@ export async function PATCH(
     const updated = await prisma.masterData.update({
       where: { id },
       data: validated,
+      include: { parent: true },
     });
 
     await catatLog({

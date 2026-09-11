@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { catatLog } from "@/lib/log-aktivitas";
 import * as bcrypt from "bcryptjs";
 import { z } from "zod";
 
@@ -64,6 +65,20 @@ export async function PATCH(
       data: updateData,
     });
 
+    const safeExisting = { id: existing.id, nama: existing.nama, email: existing.email, role: existing.role, aktif: existing.aktif };
+    const safeUpdated = { id: updated.id, nama: updated.nama, email: updated.email, role: updated.role, aktif: updated.aktif };
+
+    await catatLog({
+      userId: (session.user as any).id,
+      aksi: "UPDATE",
+      entitas: "User",
+      entitasId: updated.id,
+      deskripsi: `Mengubah data user: ${updated.nama} (${updated.email})`,
+      dataSebelum: safeExisting,
+      dataSesudah: safeUpdated,
+      request,
+    });
+
     return NextResponse.json(updated);
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -111,6 +126,16 @@ export async function DELETE(
 
     await prisma.user.delete({
       where: { id },
+    });
+
+    await catatLog({
+      userId: (session.user as any).id,
+      aksi: "DELETE",
+      entitas: "User",
+      entitasId: existing.id,
+      deskripsi: `Menghapus user: ${existing.nama} (${existing.email})`,
+      dataSebelum: { id: existing.id, nama: existing.nama, email: existing.email, role: existing.role, aktif: existing.aktif },
+      request,
     });
 
     return NextResponse.json({ message: "User berhasil dihapus" });
