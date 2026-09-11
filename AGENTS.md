@@ -49,6 +49,7 @@ Aplikasi web "Manajemen Pegawai BPVP". Tema visual: identitas Kemnaker (navy #00
 - [x] Task 12 — Single Sign-On (SSO) Kemnaker RI (SIAPkerja ID) & Google Workspace, Portal SSO Interaktif, Auto-Provisioning User, Pencatatan Log Login SSO
 - [x] Task 13 — Audit Trail Data Lama & Data Baru (dataSebelum & dataSesudah pada Log Aktivitas), Modal Diff Visual (Tabel Kolom & Raw JSON), Pembersihan Dropdown (Tanpa Kode & No Truncate), Sistem Tombol Kontras Tinggi Kemnaker
 - [x] Task 14 — Tong Sampah Khusus Admin di Sidebar (dengan Badge Dinamis), Pembersihan Tab Pegawai, Central SSO Ekosistem BPVP (Verifikasi Ketat Berbasis Tabel Pegawai & Status Aktif, Penolakan Orang Luar & Pegawai Nonaktif), Token Kriptografis Cross-App (HMAC-SHA256), App Switcher 9-Dot Grid, Verifikator Satelit & Demo Aplikasi Ekosistem (Skillhub, Maganghub, LSP-P1, Keuangan & BMN, PTSP)
+- [x] Task 15 — Pemisahan SSO Terpusat Menjadi Layanan Mandiri Terpisah (`sso-bpvp` di Port 3001), SIMPEG Murni sebagai SSO Client (Port 3000), Cross-Origin Authentication Flow & Cryptographic Handshake, Showcase Satelit Ekosistem di Server SSO Terpusat
 
 > Catatan: sebelum mulai task baru, **selalu cek dulu kondisi file yang sudah ada** (jangan asumsi kosong). Kalau ada bagian dari task sebelumnya yang ternyata belum lengkap/error, perbaiki dulu sebelum lanjut.
 

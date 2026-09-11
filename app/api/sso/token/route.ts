@@ -63,7 +63,7 @@ export async function GET() {
     // Siapkan daftar aplikasi ekosistem BPVP dengan token terlampir
     const appsWithToken = BPVP_ECOSYSTEM_APPS.map((app) => ({
       ...app,
-      launchUrl: app.isCurrent ? "/" : `${app.url}&sso_token=${encodeURIComponent(token)}`,
+      launchUrl: app.isCurrent ? "/" : `${app.url}${app.url.includes("?") ? "&" : "?"}sso_token=${encodeURIComponent(token)}`,
     }));
 
     return NextResponse.json({

@@ -65,10 +65,9 @@ export default function LoginPage() {
           <div className="p-8 space-y-6">
             {/* SSO Section */}
             <div className="space-y-3">
-              <button
-                type="button"
-                onClick={() => router.push("/sso/kemnaker")}
-                className="w-full py-3 px-4 bg-gradient-to-r from-[#003399] to-[#002266] hover:from-[#002266] hover:to-[#001744] text-white rounded-xl font-bold text-sm shadow-md hover:shadow-lg transition-all flex items-center justify-between group border border-amber-400/50"
+              <a
+                href={`${process.env.NEXT_PUBLIC_SSO_URL || "http://localhost:3001"}?service=simpeg&callbackUrl=${encodeURIComponent("http://localhost:3000/auth/sso-callback")}`}
+                className="w-full py-3 px-4 bg-gradient-to-r from-[#003399] to-[#002266] hover:from-[#002266] hover:to-[#001744] text-white rounded-xl font-bold text-sm shadow-md hover:shadow-lg transition-all flex items-center justify-between group border border-amber-400/50 cursor-pointer"
               >
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-lg bg-white p-1 shrink-0 flex items-center justify-center">
@@ -95,7 +94,7 @@ export default function LoginPage() {
                 <span className="text-amber-300 group-hover:translate-x-0.5 transition-transform text-base font-bold">
                   &rarr;
                 </span>
-              </button>
+              </a>
 
               <button
                 type="button"

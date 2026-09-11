@@ -31,10 +31,12 @@ export interface BpvpApp {
   isCurrent?: boolean;
 }
 
+const SSO_BASE_URL = process.env.NEXT_PUBLIC_SSO_URL || "http://localhost:3001";
+
 export const BPVP_ECOSYSTEM_APPS: BpvpApp[] = [
   {
     id: "simpeg",
-    nama: "SIMPEG BPVP",
+    nama: "SIMPEG BPVP Banda Aceh",
     deskripsi: "Sistem Informasi Manajemen Pegawai & Layanan Kepegawaian ASN",
     kategori: "Kepegawaian & SDM",
     url: "/",
@@ -48,7 +50,7 @@ export const BPVP_ECOSYSTEM_APPS: BpvpApp[] = [
     nama: "Skillhub BPVP",
     deskripsi: "Portal Pelatihan Vokasi, Kurikulum, & Peningkatan Produktivitas",
     kategori: "Pelatihan Vokasi",
-    url: "/sso/demo-app?app=skillhub",
+    url: `${SSO_BASE_URL}/demo/skillhub`,
     icon: "🎓",
     color: "from-emerald-600 to-teal-800",
   },
@@ -57,7 +59,7 @@ export const BPVP_ECOSYSTEM_APPS: BpvpApp[] = [
     nama: "Maganghub BPVP",
     deskripsi: "Sistem Manajemen Pemagangan Dalam & Luar Negeri Mitra Industri",
     kategori: "Pemagangan",
-    url: "/sso/demo-app?app=maganghub",
+    url: `${SSO_BASE_URL}/demo/maganghub`,
     icon: "🏢",
     color: "from-amber-600 to-orange-800",
   },
@@ -66,7 +68,7 @@ export const BPVP_ECOSYSTEM_APPS: BpvpApp[] = [
     nama: "LSP-P1 BPVP",
     deskripsi: "Lembaga Sertifikasi Profesi BNSP, Asesmen & Uji Kompetensi",
     kategori: "Sertifikasi",
-    url: "/sso/demo-app?app=lsp",
+    url: `${SSO_BASE_URL}/demo/lsp`,
     icon: "🏅",
     color: "from-indigo-600 to-purple-800",
   },
@@ -75,7 +77,7 @@ export const BPVP_ECOSYSTEM_APPS: BpvpApp[] = [
     nama: "Keuangan & BMN",
     deskripsi: "Pengelolaan Anggaran DIPA, Perbendaharaan, & Aset Milik Negara",
     kategori: "Keuangan & Sarana",
-    url: "/sso/demo-app?app=keuangan",
+    url: `${SSO_BASE_URL}/demo/keuangan`,
     icon: "💰",
     color: "from-cyan-600 to-blue-800",
   },
@@ -84,7 +86,7 @@ export const BPVP_ECOSYSTEM_APPS: BpvpApp[] = [
     nama: "Kios Siap Kerja / PTSP",
     deskripsi: "Pelayanan Terpadu Satu Pintu Informasi Pasar Kerja & Konseling Vokasi",
     kategori: "Pelayanan Publik",
-    url: "/sso/demo-app?app=ptsp",
+    url: `${SSO_BASE_URL}/demo/ptsp`,
     icon: "🏛️",
     color: "from-rose-600 to-pink-800",
   },
