@@ -13,6 +13,18 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const handleSsoClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    const ssoBase =
+      process.env.NEXT_PUBLIC_SSO_URL ||
+      (process.env.NODE_ENV === "production"
+        ? "https://sso-bpvp.vercel.app"
+        : "http://localhost:3001");
+    const origin = typeof window !== "undefined" ? window.location.origin : "http://localhost:3000";
+    const callbackUrl = `${origin}/auth/sso-callback`;
+    window.location.href = `${ssoBase}?service=simpeg&callbackUrl=${encodeURIComponent(callbackUrl)}`;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -66,7 +78,8 @@ export default function LoginPage() {
             {/* SSO Section */}
             <div className="space-y-3">
               <a
-                href={`${process.env.NEXT_PUBLIC_SSO_URL || "http://localhost:3001"}?service=simpeg&callbackUrl=${encodeURIComponent("http://localhost:3000/auth/sso-callback")}`}
+                href={`${process.env.NEXT_PUBLIC_SSO_URL || (process.env.NODE_ENV === "production" ? "https://sso-bpvp.vercel.app" : "http://localhost:3001")}?service=simpeg`}
+                onClick={handleSsoClick}
                 className="w-full py-3 px-4 bg-gradient-to-r from-[#003399] to-[#002266] hover:from-[#002266] hover:to-[#001744] text-white rounded-xl font-bold text-sm shadow-md hover:shadow-lg transition-all flex items-center justify-between group border border-amber-400/50 cursor-pointer"
               >
                 <div className="flex items-center gap-3">
