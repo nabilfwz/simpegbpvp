@@ -102,7 +102,7 @@ export default function UsersPage() {
     reset({
       nama: user.nama,
       email: user.email,
-      role: user.role,
+      role: user.role as UserRole,
       aktif: user.aktif,
     });
     setDialogOpen(true);
