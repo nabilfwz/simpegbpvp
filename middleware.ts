@@ -6,7 +6,8 @@ export default withAuth(
     const token = req.nextauth.token;
     const path = req.nextUrl.pathname;
 
-    if (path.startsWith("/admin") && token?.role !== "admin") {
+    // Protect /admin/* subpaths (not /admin itself — that's the login page)
+    if (path.startsWith("/admin/") && token?.role !== "admin") {
       return NextResponse.redirect(new URL("/", req.url));
     }
 
@@ -26,7 +27,9 @@ export const config = {
   matcher: [
     "/",
     "/pegawai/:path*",
-    "/admin/:path*",
+    // /admin (exact) is the admin login page — NOT protected
+    // /admin/:path+ covers all subpaths like /admin/users, /admin/tong-sampah
+    "/admin/:path+",
     "/api/master-data/:path*",
     "/api/pegawai/:path*",
     "/api/log-aktivitas/:path*",
