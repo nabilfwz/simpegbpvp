@@ -6,12 +6,13 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
+import { ALL_ROLES, ROLE_LABELS, ROLE_BADGE_COLORS, type UserRole } from "@/lib/constants";
 
 const userSchema = z.object({
   nama: z.string().min(1, "Nama wajib diisi"),
   email: z.string().email("Format email tidak valid"),
   password: z.string().min(6, "Password minimal 6 karakter"),
-  role: z.enum(["admin", "operator"]),
+  role: z.enum(["superadmin", "admin_kepegawaian", "kasubag_tu", "instruktur", "operator"]),
   aktif: z.boolean().optional(),
 });
 
@@ -21,7 +22,7 @@ interface User {
   id: string;
   nama: string;
   email: string;
-  role: "admin" | "operator";
+  role: string;
   aktif: boolean;
   createdAt: string;
 }
@@ -169,12 +170,10 @@ export default function UsersPage() {
                     <td className="px-4 py-3 text-sm font-medium">{user.nama}</td>
                     <td className="px-4 py-3 text-sm">{user.email}</td>
                     <td className="px-4 py-3">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        user.role === "admin"
-                          ? "bg-red-100 text-red-700"
-                          : "bg-blue-100 text-blue-700"
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium border ${
+                        ROLE_BADGE_COLORS[user.role as UserRole] || "bg-slate-100 text-slate-700 border-slate-200"
                       }`}>
-                        {user.role === "admin" ? "Admin" : "Operator"}
+                        {ROLE_LABELS[user.role as UserRole] || user.role}
                       </span>
                     </td>
                     <td className="px-4 py-3">
@@ -287,8 +286,11 @@ export default function UsersPage() {
                   {...register("role")}
                   className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#003399] outline-none"
                 >
-                  <option value="admin">Admin</option>
-                  <option value="operator">Operator</option>
+                  {ALL_ROLES.map((role) => (
+                    <option key={role} value={role}>
+                      {ROLE_LABELS[role]}
+                    </option>
+                  ))}
                 </select>
                 {errors.role && (
                   <p className="text-red-500 text-xs mt-1">{errors.role.message}</p>

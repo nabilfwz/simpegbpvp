@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { Sidebar } from "@/app/components/sidebar";
 import { AppSwitcher } from "@/app/components/app-switcher";
+import { getRoleLabel } from "@/lib/constants";
 
 export const dynamic = "force-dynamic";
 
@@ -34,7 +35,7 @@ export default async function ProtectedLayout({ children }: { children: ReactNod
                   {session.user?.name}
                 </p>
                 <p className="text-[10px] text-slate-400 capitalize font-medium">
-                  {(session.user as any)?.role === "admin" ? "Administrator" : "Operator Kepegawaian"}
+                  {getRoleLabel((session.user as any)?.role)}
                 </p>
               </div>
               <div className="w-8 h-8 rounded-lg bg-[#003399]/10 border border-[#003399]/20 flex items-center justify-center text-[#003399] font-bold text-xs">

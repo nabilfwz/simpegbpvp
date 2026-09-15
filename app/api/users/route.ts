@@ -4,19 +4,20 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import * as bcrypt from "bcryptjs";
 import { z } from "zod";
+import { isAdminRole } from "@/lib/constants";
 
 const userSchema = z.object({
   nama: z.string().min(1, "Nama wajib diisi"),
   email: z.string().email("Format email tidak valid"),
   password: z.string().min(6, "Password minimal 6 karakter"),
-  role: z.enum(["admin", "operator"]),
+  role: z.enum(["superadmin", "admin_kepegawaian", "kasubag_tu", "instruktur", "operator"]),
   aktif: z.boolean().optional(),
 });
 
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user || (session.user as any).role !== "admin") {
+    if (!session?.user || !isAdminRole((session.user as any).role)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -55,7 +56,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user || (session.user as any).role !== "admin") {
+    if (!session?.user || !isAdminRole((session.user as any).role)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 

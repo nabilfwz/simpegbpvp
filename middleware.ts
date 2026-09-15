@@ -1,5 +1,6 @@
 import { withAuth } from "next-auth/middleware";
 import { NextResponse } from "next/server";
+import { ADMIN_ROLES } from "@/lib/constants";
 
 export default withAuth(
   function middleware(req) {
@@ -7,7 +8,7 @@ export default withAuth(
     const path = req.nextUrl.pathname;
 
     // Protect /admin/* subpaths (not /admin itself — that's the login page)
-    if (path.startsWith("/admin/") && token?.role !== "admin") {
+    if (path.startsWith("/admin/") && !ADMIN_ROLES.includes(token?.role as any)) {
       return NextResponse.redirect(new URL("/", req.url));
     }
 

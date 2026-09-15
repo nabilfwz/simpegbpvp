@@ -5,12 +5,13 @@ import { prisma } from "@/lib/prisma";
 import { catatLog } from "@/lib/log-aktivitas";
 import * as bcrypt from "bcryptjs";
 import { z } from "zod";
+import { isAdminRole } from "@/lib/constants";
 
 const updateSchema = z.object({
   nama: z.string().min(1).optional(),
   email: z.string().email("Format email tidak valid").optional(),
   password: z.string().min(6, "Password minimal 6 karakter").optional(),
-  role: z.enum(["admin", "operator"]).optional(),
+  role: z.enum(["superadmin", "admin_kepegawaian", "kasubag_tu", "instruktur", "operator"]).optional(),
   aktif: z.boolean().optional(),
 });
 
@@ -20,7 +21,7 @@ export async function PATCH(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user || (session.user as any).role !== "admin") {
+    if (!session?.user || !isAdminRole((session.user as any).role)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -101,7 +102,7 @@ export async function DELETE(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user || (session.user as any).role !== "admin") {
+    if (!session?.user || !isAdminRole((session.user as any).role)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 

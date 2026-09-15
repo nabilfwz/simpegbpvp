@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
 import { SearchableSelect } from "@/app/components/ui/searchable-select";
+import { isStaffRole } from "@/lib/constants";
 
 interface Pegawai {
   id: string;
@@ -32,7 +33,7 @@ interface Pegawai {
 export default function PegawaiPage() {
   const router = useRouter();
   const { data: session } = useSession();
-  const isAdmin = (session?.user as any)?.role === "admin";
+  const isAdmin = isStaffRole((session?.user as any)?.role);
 
   const [pegawais, setPegawais] = useState<Pegawai[]>([]);
   const [counts, setCounts] = useState({ active: 0, trash: 0 });

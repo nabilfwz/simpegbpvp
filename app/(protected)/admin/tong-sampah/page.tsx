@@ -8,6 +8,7 @@ import { Trash2, RotateCcw, AlertTriangle, ShieldAlert, ArrowLeft, Search, Filte
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
 import { SearchableSelect } from "@/app/components/ui/searchable-select";
+import { isAdminRole } from "@/lib/constants";
 
 interface Pegawai {
   id: string;
@@ -27,7 +28,7 @@ interface Pegawai {
 export default function AdminTongSampahPage() {
   const router = useRouter();
   const { data: session, status } = useSession();
-  const isAdmin = (session?.user as any)?.role === "admin";
+  const isAdmin = isAdminRole((session?.user as any)?.role);
 
   const [pegawais, setPegawais] = useState<Pegawai[]>([]);
   const [loading, setLoading] = useState(false);

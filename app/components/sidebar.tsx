@@ -7,6 +7,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/app/components/ui/button";
 import { BrandLogo } from "@/app/components/brand-logo";
 import { AppSwitcher } from "@/app/components/app-switcher";
+import { isAdminRole, getRoleLabel } from "@/lib/constants";
 
 export function Sidebar() {
   const pathname = usePathname();
@@ -19,7 +20,7 @@ export function Sidebar() {
     setMobileOpen(false);
   }, [pathname]);
 
-  const isAdmin = (session?.user as any)?.role === "admin";
+  const isAdmin = isAdminRole((session?.user as any)?.role);
   const [trashCount, setTrashCount] = useState<number>(0);
 
   // Fetch trash count for admin badge
@@ -201,7 +202,7 @@ export function Sidebar() {
             <div className="mb-3 px-2 py-1 truncate">
               <p className="font-semibold text-slate-900 text-sm truncate">{session.user.name}</p>
               <p className="text-xs text-slate-500 capitalize font-medium">
-                {(session.user as any)?.role || "User"}
+                {getRoleLabel((session.user as any)?.role)}
               </p>
             </div>
           )}
