@@ -130,14 +130,14 @@ export async function validatePegawaiForSso(identifier: string): Promise<{
 
     const employeeEmail = pegawai.email?.toLowerCase().trim() || `${pegawai.nip}@bpvp.kemnaker.go.id`;
 
-    // Determine system role: Subbagian Umum, Pimpinan, or designated admin titles become 'admin', others 'operator'
+    // Determine system role: Subbagian Umum, Pimpinan, or designated admin titles become 'admin', others 'user'
     const subUnit = pegawai.subUnitKerja?.label?.toLowerCase() || "";
     const isElevated =
       subUnit.includes("umum") ||
       subUnit.includes("pimpinan") ||
       subUnit.includes("tata usaha") ||
       pegawai.nip === "198001012005011001";
-    const assignedRole = isElevated ? "admin" : "operator";
+    const assignedRole = isElevated ? "admin" : "user";
 
     // Find or synchronize internal User record
     let user = await prisma.user.findUnique({

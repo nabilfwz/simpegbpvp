@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { catatLog } from "@/lib/log-aktivitas";
 import { z } from "zod";
+import { isStaffRole } from "@/lib/constants";
 
 const pegawaiSchema = z.object({
   nip: z.string().min(1, "NIP wajib diisi"),
@@ -136,6 +137,13 @@ export async function POST(request: NextRequest) {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    if (!isStaffRole((session.user as any).role)) {
+      return NextResponse.json(
+        { error: "Forbidden: Hanya Administrator yang berhak menambah data pegawai." },
+        { status: 403 }
+      );
     }
 
     const body = await request.json();

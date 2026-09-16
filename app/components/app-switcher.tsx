@@ -113,7 +113,7 @@ export function AppSwitcher() {
                     {session?.user?.name || "Pegawai BPVP"}
                   </p>
                   <p className="text-slate-500 text-[11px] truncate">
-                    {session?.user?.email} • Role: <span className="font-semibold text-[#003399]">{(session?.user as any)?.role || "operator"}</span>
+                    {session?.user?.email} • Role: <span className="font-semibold text-[#003399]">{(session?.user as any)?.role || "user"}</span>
                   </p>
                 </div>
               </div>

@@ -7,7 +7,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/app/components/ui/button";
 import { BrandLogo } from "@/app/components/brand-logo";
 import { AppSwitcher } from "@/app/components/app-switcher";
-import { isAdminRole, getRoleLabel } from "@/lib/constants";
+import { isAdminRole, hasAdminAccess, getRoleLabel } from "@/lib/constants";
 
 export function Sidebar() {
   const pathname = usePathname();
@@ -20,12 +20,14 @@ export function Sidebar() {
     setMobileOpen(false);
   }, [pathname]);
 
-  const isAdmin = isAdminRole((session?.user as any)?.role);
+  const userRole = (session?.user as any)?.role;
+  const isAdmin = isAdminRole(userRole);
+  const canAccessAdmin = hasAdminAccess(userRole);
   const [trashCount, setTrashCount] = useState<number>(0);
 
   // Fetch trash count for admin badge
   useEffect(() => {
-    if (isAdmin) {
+    if (isAdmin) { // only superadmin sees trash count
       fetch("/api/pegawai?trash=true&limit=1")
         .then((res) => res.json())
         .then((data) => {
@@ -42,12 +44,18 @@ export function Sidebar() {
     { href: "/pegawai", label: "Data Pegawai", icon: "👥" },
   ];
 
+  // Menu admin umum: superadmin + admin
   const adminItems = [
     { href: "/admin/master-data", label: "Master Data", icon: "⚙️" },
-    { href: "/admin/users", label: "Manajemen User", icon: "👤" },
-    { href: "/admin/log-aktivitas", label: "Log Aktivitas", icon: "📋" },
-    { href: "/admin/tong-sampah", label: "Tong Sampah Pegawai", icon: "🗑️", badge: trashCount },
+    { href: "/admin/users", label: "Manajemen User", icon: "👤", superadminOnly: true },
+    { href: "/admin/log-aktivitas", label: "Log Aktivitas", icon: "📋", superadminOnly: true },
+    { href: "/admin/tong-sampah", label: "Tong Sampah Pegawai", icon: "🗑️", badge: trashCount, superadminOnly: true },
   ];
+
+  // Filter menu sesuai role
+  const visibleAdminItems = adminItems.filter(
+    (item) => !item.superadminOnly || isAdmin
+  );
 
   const isActive = (href: string) => {
     if (href === "/") return pathname === "/";
@@ -156,8 +164,8 @@ export function Sidebar() {
             </div>
           </div>
 
-          {/* Admin Menu */}
-          {isAdmin && (
+          {/* Admin Menu — tampil untuk superadmin & admin */}
+          {canAccessAdmin && (
             <div>
               {(!desktopCollapsed || mobileOpen) && (
                 <p className="text-[11px] uppercase tracking-wider font-semibold text-slate-400 mb-2 px-3">
@@ -165,7 +173,7 @@ export function Sidebar() {
                 </p>
               )}
               <div className="space-y-1">
-                {adminItems.map((item) => {
+                {visibleAdminItems.map((item) => {
                   const active = isActive(item.href);
                   return (
                     <Link

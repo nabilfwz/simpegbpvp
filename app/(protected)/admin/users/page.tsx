@@ -12,7 +12,7 @@ const userSchema = z.object({
   nama: z.string().min(1, "Nama wajib diisi"),
   email: z.string().email("Format email tidak valid"),
   password: z.string().min(6, "Password minimal 6 karakter"),
-  role: z.enum(["superadmin", "admin_kepegawaian", "kasubag_tu", "instruktur", "operator"]),
+  role: z.enum(["superadmin", "admin", "user"]),
   aktif: z.boolean().optional(),
 });
 
@@ -46,7 +46,7 @@ export default function UsersPage() {
       nama: "",
       email: "",
       password: "",
-      role: "operator",
+      role: "user",
       aktif: true,
     },
   });
@@ -134,7 +134,7 @@ export default function UsersPage() {
           <button
             onClick={() => {
               setEditingUser(null);
-              reset({ nama: "", email: "", password: "", role: "operator", aktif: true });
+              reset({ nama: "", email: "", password: "", role: "user", aktif: true });
               setDialogOpen(true);
             }}
             className="bg-[#003399] text-white px-4 py-2 rounded-lg hover:bg-[#002266] transition"

@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { catatLog } from "@/lib/log-aktivitas";
 import { z } from "zod";
+import { isAdminRole, isStaffRole } from "@/lib/constants";
 
 const updateSchema = z.object({
   nip: z.string().min(1).optional(),
@@ -95,6 +96,13 @@ export async function PATCH(
     const session = await getServerSession(authOptions);
     if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    if (!isStaffRole((session.user as any).role)) {
+      return NextResponse.json(
+        { error: "Forbidden: Hanya Administrator yang berhak mengubah data pegawai." },
+        { status: 403 }
+      );
     }
 
     const { id } = await params;
@@ -223,6 +231,13 @@ export async function DELETE(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    if (!isStaffRole((session.user as any).role)) {
+      return NextResponse.json(
+        { error: "Forbidden: Hanya Administrator yang berhak menghapus data pegawai." },
+        { status: 403 }
+      );
+    }
+
     const { id } = await params;
     const existing = await prisma.pegawai.findUnique({
       where: { id },
@@ -255,10 +270,10 @@ export async function DELETE(
     const isPermanent = searchParams.get("permanent") === "true";
 
     if (isPermanent) {
-      // Permanent delete can ONLY be performed by administrator
-      if ((session.user as any).role !== "admin") {
+      // Permanent delete can ONLY be performed by superadmin
+      if (!isAdminRole((session.user as any).role)) {
         return NextResponse.json(
-          { error: "Hanya Administrator yang memiliki izin untuk menghapus pegawai secara permanen" },
+          { error: "Hanya Super Administrator yang memiliki izin untuk menghapus pegawai secara permanen" },
           { status: 403 }
         );
       }

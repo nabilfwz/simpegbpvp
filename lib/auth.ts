@@ -48,7 +48,30 @@ const providers: any[] = [
     },
   }),
 
-  // 2. Layanan Single Sign-On (SSO) Kemnaker RI (SIAPkerja ID / Kemnaker Portal)
+  // 2. Provider SSO Email Kedinasan BPVP (Tanpa Kata Sandi)
+  CredentialsProvider({
+    id: "sso-email",
+    name: "SSO Email Pegawai BPVP",
+    credentials: {
+      email: { label: "Email Kedinasan BPVP", type: "email" },
+    },
+    async authorize(credentials) {
+      const email = credentials?.email?.trim();
+      if (!email) {
+        throw new Error("Email wajib diisi untuk verifikasi SSO");
+      }
+      const { validatePegawaiForSso } = await import("@/lib/sso");
+      const { user } = await validatePegawaiForSso(email);
+      return {
+        id: user.id,
+        email: user.email,
+        name: user.nama,
+        role: user.role,
+      };
+    },
+  }),
+
+  // 3. Layanan Single Sign-On (SSO) Kemnaker RI (SIAPkerja ID / Kemnaker Portal & Cross-App Token)
   CredentialsProvider({
     id: "sso-kemnaker",
     name: "SSO Kemnaker (SIAPkerja ID)",
@@ -101,7 +124,7 @@ const providers: any[] = [
   }),
 ];
 
-// 3. Google Workspace SSO (Aktif jika GOOGLE_CLIENT_ID & GOOGLE_CLIENT_SECRET diisi)
+// 4. Google Workspace SSO (Aktif jika GOOGLE_CLIENT_ID & GOOGLE_CLIENT_SECRET diisi)
 if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
   providers.push(
     GoogleProvider({
@@ -124,6 +147,10 @@ export const authOptions: NextAuthOptions = {
             const pegawai = await prisma.pegawai.findFirst({
               where: {
                 email: { equals: email, mode: "insensitive" },
+              },
+              include: {
+                subUnitKerja: true,
+                unitKerja: true,
               },
             });
 
@@ -149,6 +176,14 @@ export const authOptions: NextAuthOptions = {
             }
 
             if (!dbUser && pegawai) {
+              const subUnit = pegawai.subUnitKerja?.label?.toLowerCase() || "";
+              const isElevated =
+                subUnit.includes("umum") ||
+                subUnit.includes("pimpinan") ||
+                subUnit.includes("tata usaha") ||
+                pegawai.nip === "198001012005011001";
+              const assignedRole = isElevated ? "admin" : "user";
+
               // Provision user untuk pegawai yang valid
               const randomPassword = await bcrypt.hash(
                 Math.random().toString(36).slice(-10) + Date.now().toString(),
@@ -159,7 +194,7 @@ export const authOptions: NextAuthOptions = {
                   email,
                   nama: user.name || pegawai.nama,
                   password: randomPassword,
-                  role: "operator",
+                  role: assignedRole,
                   aktif: true,
                 },
               });
@@ -172,7 +207,9 @@ export const authOptions: NextAuthOptions = {
           }
 
           const providerName =
-            account?.provider === "sso-kemnaker"
+            account?.provider === "sso-email"
+              ? "SSO Email BPVP"
+              : account?.provider === "sso-kemnaker"
               ? "SSO Kemnaker (SIAPkerja ID)"
               : account?.provider === "google"
               ? "Google Workspace"
@@ -199,6 +236,17 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.id = user.id;
         token.role = (user as any).role;
+        try {
+          const { generateSsoToken } = await import("@/lib/sso");
+          token.ssoToken = generateSsoToken({
+            id: user.id,
+            nama: user.name || "",
+            email: user.email || "",
+            role: (user as any).role || "user",
+          });
+        } catch (e) {
+          console.error("Gagal generate ssoToken di jwt callback:", e);
+        }
       }
       return token;
     },
@@ -206,6 +254,7 @@ export const authOptions: NextAuthOptions = {
       if (session.user) {
         (session.user as any).id = token.id;
         (session.user as any).role = token.role;
+        (session as any).ssoToken = token.ssoToken;
       }
       return session;
     },

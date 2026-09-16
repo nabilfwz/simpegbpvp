@@ -725,7 +725,7 @@ async function main() {
     }
   }
 
-  // 18. DEFAULT USERS (Admin & Operator)
+  // 18. DEFAULT USERS (Superadmin & User)
   console.log("Seeding Default Users...");
   const adminEmail = process.env.DEFAULT_ADMIN_EMAIL || "admin@bpvp.local";
   const adminPassword = process.env.DEFAULT_ADMIN_PASSWORD || "admin123";
@@ -735,40 +735,40 @@ async function main() {
     where: { email: adminEmail },
     update: {
       password: hashedAdminPassword,
-      role: "admin",
+      role: "superadmin",
       aktif: true,
     },
     create: {
       nama: "Administrator BPVP Banda Aceh",
       email: adminEmail,
       password: hashedAdminPassword,
-      role: "admin",
+      role: "superadmin",
       aktif: true,
     },
   });
 
-  const operatorPassword = "operator123";
-  const hashedOperatorPassword = await bcrypt.hash(operatorPassword, 10);
+  const userPassword = "user123";
+  const hashedUserPassword = await bcrypt.hash(userPassword, 10);
 
   const operatorUser = await prisma.user.upsert({
     where: { email: "operator@bpvp.local" },
     update: {
-      password: hashedOperatorPassword,
-      role: "operator",
+      password: hashedUserPassword,
+      role: "user",
       aktif: true,
     },
     create: {
       nama: "Operator Kepegawaian BPVP",
       email: "operator@bpvp.local",
-      password: hashedOperatorPassword,
-      role: "operator",
+      password: hashedUserPassword,
+      role: "user",
       aktif: true,
     },
   });
 
   console.log(`Seeding selesai dengan sukses!`);
-  console.log(`- Admin: ${adminUser.email} (Password: ${adminPassword})`);
-  console.log(`- Operator: ${operatorUser.email} (Password: ${operatorPassword})`);
+  console.log(`- Superadmin: ${adminUser.email} (Password: ${adminPassword})`);
+  console.log(`- User: ${operatorUser.email} (Password: ${userPassword})`);
 }
 
 main()

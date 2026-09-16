@@ -1,14 +1,33 @@
 import { withAuth } from "next-auth/middleware";
 import { NextResponse } from "next/server";
-import { ADMIN_ROLES } from "@/lib/constants";
+import { ADMIN_ROLES, STAFF_ROLES, REPORT_ROLES } from "@/lib/constants";
 
 export default withAuth(
   function middleware(req) {
     const token = req.nextauth.token;
     const path = req.nextUrl.pathname;
+    const role = token?.role as string | undefined;
 
-    // Protect /admin/* subpaths (not /admin itself — that's the login page)
-    if (path.startsWith("/admin/") && !ADMIN_ROLES.includes(token?.role as any)) {
+    // /admin root path: redirect ke /admin/master-data jika admin/superadmin, atau / jika user biasa
+    if (path === "/admin") {
+      if (STAFF_ROLES.includes(role as any)) {
+        return NextResponse.redirect(new URL("/admin/master-data", req.url));
+      }
+      return NextResponse.redirect(new URL("/", req.url));
+    }
+
+    // /admin/users & /admin/log-aktivitas & /admin/tong-sampah — hanya superadmin
+    if (
+      (path.startsWith("/admin/users") ||
+        path.startsWith("/admin/log-aktivitas") ||
+        path.startsWith("/admin/tong-sampah")) &&
+      !ADMIN_ROLES.includes(role as any)
+    ) {
+      return NextResponse.redirect(new URL("/", req.url));
+    }
+
+    // /admin/* umum (master-data dll.) — superadmin & admin
+    if (path.startsWith("/admin/") && !STAFF_ROLES.includes(role as any)) {
       return NextResponse.redirect(new URL("/", req.url));
     }
 
@@ -28,9 +47,7 @@ export const config = {
   matcher: [
     "/",
     "/pegawai/:path*",
-    // /admin (exact) is the admin login page — NOT protected
-    // /admin/:path+ covers all subpaths like /admin/users, /admin/tong-sampah
-    "/admin/:path+",
+    "/admin/:path*",
     "/api/master-data/:path*",
     "/api/pegawai/:path*",
     "/api/log-aktivitas/:path*",

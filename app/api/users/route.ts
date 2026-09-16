@@ -10,7 +10,7 @@ const userSchema = z.object({
   nama: z.string().min(1, "Nama wajib diisi"),
   email: z.string().email("Format email tidak valid"),
   password: z.string().min(6, "Password minimal 6 karakter"),
-  role: z.enum(["superadmin", "admin_kepegawaian", "kasubag_tu", "instruktur", "operator"]),
+  role: z.enum(["superadmin", "admin", "user"]),
   aktif: z.boolean().optional(),
 });
 
