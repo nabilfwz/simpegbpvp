@@ -11,6 +11,11 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "SIMPEG BPVP - Sistem Informasi Manajemen Pegawai",
   description: "Sistem Informasi Manajemen Pegawai BPVP Kementerian Ketenagakerjaan",
+  icons: {
+    icon: "/favicon.ico?v=2",
+    shortcut: "/favicon.ico?v=2",
+    apple: "/favicon.ico?v=2",
+  },
 };
 
 interface LayoutProps {
