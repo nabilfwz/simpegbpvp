@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, Suspense } from "react";
+import { useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { Loader2, ArrowRight, ShieldCheck, ShieldAlert } from "lucide-react";
+import { Loader2, ArrowRight, ShieldCheck, ShieldAlert, Sparkles } from "lucide-react";
 
 function LoginRedirectContent() {
   const searchParams = useSearchParams();
   const errorParam = searchParams.get("error");
+  const [redirecting, setRedirecting] = useState(false);
 
   const ssoBase =
     process.env.NEXT_PUBLIC_SSO_URL || "https://sso-bpvp.vercel.app";
@@ -19,15 +20,11 @@ function LoginRedirectContent() {
     callbackUrl
   )}`;
 
-  useEffect(() => {
-    // Jika tidak ada error dari callback, otomatis arahkan ke portal SSO
-    if (!errorParam) {
-      const timer = setTimeout(() => {
-        window.location.href = ssoLoginUrl;
-      }, 600);
-      return () => clearTimeout(timer);
-    }
-  }, [errorParam, ssoLoginUrl]);
+  const handleLoginClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setRedirecting(true);
+    window.location.href = ssoLoginUrl;
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#001744] via-[#002266] to-[#003399] flex items-center justify-center p-4">
@@ -43,14 +40,15 @@ function LoginRedirectContent() {
                 className="w-full h-full object-contain"
               />
             </div>
-            <div className="inline-block px-3 py-0.5 bg-blue-50 border border-blue-200 rounded-full text-[#003399] text-[10px] font-bold tracking-wider uppercase mb-2">
+            <div className="inline-flex items-center gap-1 px-3 py-0.5 bg-blue-50 border border-blue-200 rounded-full text-[#003399] text-[10px] font-bold tracking-wider uppercase mb-2">
+              <Sparkles className="w-3 h-3 text-amber-500" />
               Kementerian Ketenagakerjaan RI
             </div>
-            <h1 className="text-xl font-extrabold text-slate-900 tracking-tight">
+            <h1 className="text-xl font-black text-slate-900 tracking-tight">
               SIMPEG BPVP Banda Aceh
             </h1>
             <p className="text-xs text-slate-500 font-medium mt-1">
-              Sistem Informasi Manajemen Kepegawaian &amp; SDM Aparatur
+              Sistem Informasi Manajemen Pegawai &amp; SDM Aparatur
             </p>
           </div>
 
@@ -59,41 +57,58 @@ function LoginRedirectContent() {
             <div className="p-4 bg-red-50 border-l-4 border-red-600 rounded-r-xl text-left flex items-start gap-2.5">
               <ShieldAlert className="w-5 h-5 text-red-600 mt-0.5 shrink-0" />
               <div className="text-xs">
-                <p className="font-bold text-red-900">Gagal Masuk</p>
+                <p className="font-bold text-red-900">Autentikasi Ditolak</p>
                 <p className="text-red-700 mt-0.5">
-                  Autentikasi SSO tidak berhasil atau akun belum terdaftar.
+                  Email Anda tidak terdaftar sebagai pegawai resmi BPVP atau akun dinonaktifkan.
                 </p>
               </div>
             </div>
           )}
 
-          {/* Status info & Redirect animation */}
-          <div className="space-y-3 py-2">
-            <div className="flex items-center justify-center gap-2 text-sm font-semibold text-[#003399]">
-              <Loader2 className="w-5 h-5 animate-spin" />
-              <span>Menghubungkan ke Portal SSO Terpusat...</span>
-            </div>
+          {/* Descriptive text */}
+          <div className="space-y-1.5 py-1">
+            <p className="text-sm font-bold text-slate-800">
+              Portal Layanan Pegawai Terpadu
+            </p>
             <p className="text-xs text-slate-500 leading-relaxed max-w-xs mx-auto">
-              Login ke SIMPEG dialihkan melalui <strong>Portal SSO BPVP</strong> menggunakan autentikasi akun Google / Sosmed resmi ASN.
+              Silakan masuk melalui <strong>Portal Single Sign-On (SSO) BPVP</strong> menggunakan akun Google / Gmail kedinasan Anda.
             </p>
           </div>
 
-          {/* Action Button */}
+          {/* Action Button: ONLY redirects on click */}
           <div>
-            <a
-              href={ssoLoginUrl}
+            <button
+              type="button"
               id="btn-goto-sso"
-              className="w-full py-3.5 px-5 bg-gradient-to-r from-[#003399] to-[#002266] hover:from-[#002266] hover:to-[#001744] text-white rounded-xl font-bold text-sm shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer group"
+              onClick={handleLoginClick}
+              disabled={redirecting}
+              className="w-full py-4 px-5 bg-gradient-to-r from-[#003399] to-[#002266] hover:from-[#002266] hover:to-[#001744] text-white rounded-2xl font-bold text-sm shadow-lg hover:shadow-xl transition-all flex items-center justify-between cursor-pointer group disabled:opacity-70"
             >
-              <span>Lanjut ke Portal SSO Kemnaker</span>
-              <ArrowRight className="w-4 h-4 text-amber-300 group-hover:translate-x-1 transition-transform" />
-            </a>
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center shrink-0 border border-white/20">
+                  <ShieldCheck className="w-4 h-4 text-amber-300" />
+                </div>
+                <div className="text-left">
+                  <p className="text-xs font-extrabold text-white">
+                    Masuk dengan SSO BPVP
+                  </p>
+                  <p className="text-[10px] text-blue-200 font-normal">
+                    Google (Gmail) &amp; SIAPkerja
+                  </p>
+                </div>
+              </div>
+              {redirecting ? (
+                <Loader2 className="w-5 h-5 animate-spin text-amber-300 ml-2" />
+              ) : (
+                <ArrowRight className="w-5 h-5 text-amber-300 group-hover:translate-x-1 transition-transform ml-2 shrink-0" />
+              )}
+            </button>
           </div>
 
           {/* Footer Security Note */}
-          <div className="pt-4 border-t border-slate-100 flex items-center justify-center gap-1.5 text-xs text-slate-400">
+          <div className="pt-3 border-t border-slate-100 flex items-center justify-center gap-1.5 text-xs text-slate-400">
             <ShieldCheck className="w-4 h-4 text-emerald-600" />
-            <span>Identity Provider Terpusat &bull; SSO BPVP</span>
+            <span>Central Identity Provider (IdP) &bull; BPVP Banda Aceh</span>
           </div>
         </div>
 
