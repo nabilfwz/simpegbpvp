@@ -125,8 +125,9 @@ export async function DELETE(
       );
     }
 
-    await prisma.user.delete({
+    const updated = await prisma.user.update({
       where: { id },
+      data: { aktif: false },
     });
 
     await catatLog({
@@ -134,12 +135,13 @@ export async function DELETE(
       aksi: "DELETE",
       entitas: "User",
       entitasId: existing.id,
-      deskripsi: `Menghapus user: ${existing.nama} (${existing.email})`,
+      deskripsi: `Menonaktifkan user (pindah ke tong sampah): ${existing.nama} (${existing.email})`,
       dataSebelum: { id: existing.id, nama: existing.nama, email: existing.email, role: existing.role, aktif: existing.aktif },
+      dataSesudah: { id: updated.id, nama: updated.nama, email: updated.email, role: updated.role, aktif: updated.aktif },
       request,
     });
 
-    return NextResponse.json({ message: "User berhasil dihapus" });
+    return NextResponse.json({ message: "User berhasil dipindahkan ke tong sampah" });
   } catch (error) {
     console.error("Error DELETE users:", error);
     return NextResponse.json(

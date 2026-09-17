@@ -70,17 +70,17 @@ export function Sidebar() {
 
   // Fetch trash count for admin badge
   useEffect(() => {
-    if (isAdmin) { // only superadmin sees trash count
-      fetch("/api/pegawai?trash=true&limit=1")
+    if (canAccessAdmin) {
+      fetch("/api/tong-sampah?countOnly=true")
         .then((res) => res.json())
         .then((data) => {
-          if (data?.pagination?.total !== undefined) {
-            setTrashCount(data.pagination.total);
+          if (data?.total !== undefined) {
+            setTrashCount(data.total);
           }
         })
         .catch(() => {});
     }
-  }, [isAdmin, pathname]);
+  }, [canAccessAdmin, pathname]);
 
   const navigationItems = [
     { href: "/", label: "Dashboard", icon: "📊" },
@@ -91,8 +91,8 @@ export function Sidebar() {
   const adminItems = [
     { href: "/admin/master-data", label: "Master Data", icon: "⚙️", isMasterData: true },
     { href: "/admin/users", label: "Manajemen User", icon: "👤", superadminOnly: true },
-    { href: "/admin/log-aktivitas", label: "Log Aktivitas", icon: "📋", superadminOnly: true },
-    { href: "/admin/tong-sampah", label: "Tong Sampah Pegawai", icon: "🗑️", badge: trashCount, superadminOnly: true },
+    { href: "/admin/log-aktivitas", label: "Log Aktivitas", icon: "📋" },
+    { href: "/admin/tong-sampah", label: "Tong Sampah", icon: "🗑️", badge: trashCount },
   ];
 
   // Filter menu sesuai role

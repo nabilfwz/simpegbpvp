@@ -193,7 +193,7 @@ export async function validatePegawaiForSso(identifier: string): Promise<{
  */
 export function generateSsoToken(user: { id: string; nama: string; email: string; role: string }, pegawai?: any): string {
   const now = Math.floor(Date.now() / 1000);
-  const exp = now + 8 * 3600; // Valid for 8 hours
+  const exp = now + 1 * 3600; // Berlaku 1 jam (3600 detik)
 
   const payload: SsoTokenPayload = {
     tokenId: crypto.randomBytes(12).toString("hex"),

@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { catatLog } from "@/lib/log-aktivitas";
+import { hasAdminAccess } from "@/lib/constants";
 import {
   getCachedMasterData,
   setCachedMasterData,
@@ -87,7 +88,8 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user || (session.user as any).role !== "admin") {
+    const role = (session?.user as any)?.role;
+    if (!session?.user || !hasAdminAccess(role)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 

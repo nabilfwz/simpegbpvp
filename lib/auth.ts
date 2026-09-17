@@ -234,7 +234,7 @@ export const authOptions: NextAuthOptions = {
       }
       return true;
     },
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger }) {
       if (user) {
         token.id = user.id;
         token.role = (user as any).role;
@@ -250,6 +250,23 @@ export const authOptions: NextAuthOptions = {
           console.error("Gagal generate ssoToken di jwt callback:", e);
         }
       }
+
+      // Sliding session: ketika trigger === "update" dipanggil saat user aktif, perbarui ssoToken
+      if (trigger === "update" && token.id) {
+        try {
+          const { generateSsoToken } = await import("@/lib/sso");
+          token.ssoToken = generateSsoToken({
+            id: token.id as string,
+            nama: (token.name as string) || "",
+            email: (token.email as string) || "",
+            role: (token.role as string) || "user",
+          });
+          token.lastRefreshed = Date.now();
+        } catch (e) {
+          console.error("Gagal refresh ssoToken saat session update:", e);
+        }
+      }
+
       return token;
     },
     async session({ session, token }) {
@@ -257,6 +274,10 @@ export const authOptions: NextAuthOptions = {
         (session.user as any).id = token.id;
         (session.user as any).role = token.role;
         (session as any).ssoToken = token.ssoToken;
+        // Expose expiration timestamp (ms) untuk UI countdown & testing sliding session
+        const expSeconds = (token.exp as number) || (Math.floor(Date.now() / 1000) + 3600);
+        (session as any).expiresAt = expSeconds * 1000;
+        (session as any).maxAge = 3600;
       }
       return session;
     },
@@ -266,6 +287,8 @@ export const authOptions: NextAuthOptions = {
   },
   session: {
     strategy: "jwt",
+    maxAge: 60 * 60, // 1 jam (3600 detik)
+    updateAge: 5 * 60, // NextAuth auto-roll cookie jika ada aktivitas setelah 5 menit
   },
   useSecureCookies:
     process.env.NODE_ENV === "production" &&

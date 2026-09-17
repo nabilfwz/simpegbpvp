@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { Sidebar } from "@/app/components/sidebar";
 import { AppSwitcher } from "@/app/components/app-switcher";
+import { SessionTracker } from "@/app/components/session-tracker";
 import { getRoleLabel } from "@/lib/constants";
 
 export const dynamic = "force-dynamic";
@@ -27,7 +28,8 @@ export default async function ProtectedLayout({ children }: { children: ReactNod
               SIMPEG BPVP Banda Aceh • Kemnaker RI
             </span>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
+            <SessionTracker />
             <AppSwitcher />
             <div className="flex items-center gap-2.5 pl-4 border-l border-slate-200 text-right">
               <div>

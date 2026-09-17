@@ -4,7 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import * as bcrypt from "bcryptjs";
 import { z } from "zod";
-import { isAdminRole } from "@/lib/constants";
+import { isAdminRole, hasAdminAccess } from "@/lib/constants";
 
 const userSchema = z.object({
   nama: z.string().min(1, "Nama wajib diisi"),
@@ -17,7 +17,7 @@ const userSchema = z.object({
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user || !isAdminRole((session.user as any).role)) {
+    if (!session?.user || !hasAdminAccess((session.user as any).role)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 

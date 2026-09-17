@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { catatLog } from "@/lib/log-aktivitas";
 import { invalidateMasterDataCache } from "@/lib/master-data-cache";
+import { hasAdminAccess } from "@/lib/constants";
 import { z } from "zod";
 
 const updateSchema = z.object({
@@ -20,7 +21,7 @@ export async function PATCH(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user || (session.user as any).role !== "admin") {
+    if (!session?.user || !hasAdminAccess((session.user as any).role)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -102,7 +103,7 @@ export async function DELETE(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user || (session.user as any).role !== "admin") {
+    if (!session?.user || !hasAdminAccess((session.user as any).role)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
