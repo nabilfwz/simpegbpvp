@@ -2,13 +2,12 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useSession, signOut } from "next-auth/react";
-import { AlertTriangle, CheckCircle2, Clock } from "lucide-react";
+import { AlertTriangle, Clock } from "lucide-react";
 
 export function SessionTracker() {
   const { data: session, update } = useSession();
   const [remainingSeconds, setRemainingSeconds] = useState<number>(3600);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
-  const [showExtendedToast, setShowExtendedToast] = useState<boolean>(false);
 
   const lastActivityTimestampRef = useRef<number>(Date.now());
   const expiryTimestampRef = useRef<number>(Date.now() + 3600 * 1000);
@@ -27,7 +26,7 @@ export function SessionTracker() {
   }, [session]);
 
   // Fungsi perpanjang sesi
-  const refreshSession = useCallback(async (showFeedback = false) => {
+  const refreshSession = useCallback(async () => {
     if (isRefreshing) return;
     setIsRefreshing(true);
     try {
@@ -35,11 +34,6 @@ export function SessionTracker() {
       // Reset waktu kedaluwarsa ke 1 jam ke depan
       expiryTimestampRef.current = Date.now() + 3600 * 1000;
       lastRefreshTimestampRef.current = Date.now();
-
-      if (showFeedback) {
-        setShowExtendedToast(true);
-        setTimeout(() => setShowExtendedToast(false), 3000);
-      }
     } catch (err) {
       console.error("Gagal memperpanjang sesi:", err);
     } finally {
@@ -47,7 +41,7 @@ export function SessionTracker() {
     }
   }, [isRefreshing, update]);
 
-  // Monitor aktivitas user di background (klik, ketik, scroll, touch)
+  // Monitor aktivitas user di background (klik, ketik, scroll, touch, mousemove)
   useEffect(() => {
     let lastRecorded = 0;
     const handleUserActivity = () => {
@@ -61,10 +55,10 @@ export function SessionTracker() {
         const timeSinceLastRefresh = now - lastRefreshTimestampRef.current;
 
         // AUTO SLIDING SESSION:
-        // Jika sisa waktu <= 5 menit (300 detik) dan user kembali aktif,
-        // perpanjang sesi otomatis dan hilangkan warning atas
+        // Jika sisa waktu <= 5 menit (300 detik) dan user ada aktivitas,
+        // perpanjang sesi otomatis 1 jam lagi dan notifikasi warning langsung hilang
         if (remaining <= 300 && timeSinceLastRefresh > 10000) {
-          refreshSession(true);
+          refreshSession();
         }
       }
     };
@@ -108,44 +102,21 @@ export function SessionTracker() {
   // Hanya muncul jika sisa waktu <= 5 menit (300 detik) karena user idle
   const isIdleWarning = remainingSeconds <= 300;
 
-  return (
-    <>
-      {/* Toast konfirmasi saat sesi berhasil diperpanjang otomatis setelah idle */}
-      {showExtendedToast && (
-        <div className="fixed top-4 right-4 z-50 max-w-sm bg-emerald-900 text-white px-4 py-3 rounded-xl shadow-2xl border border-emerald-500/40 flex items-center gap-3 animate-in fade-in slide-in-from-top-4 duration-300">
-          <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
-          <div className="text-xs">
-            <p className="font-bold text-white">Sesi Dilanjutkan</p>
-            <p className="text-emerald-200 mt-0.5">Sesi berhasil diperpanjang 1 jam ke depan.</p>
-          </div>
-        </div>
-      )}
+  if (!isIdleWarning) return null;
 
-      {/* Warning Alert di bagian atas (seperti toast peringatan), TANPA dialog/backdrop */}
-      {isIdleWarning && (
-        <div className="fixed top-4 right-4 z-50 max-w-md bg-amber-600 text-white px-4 py-3 rounded-xl shadow-2xl border border-amber-500 flex items-center justify-between gap-3.5 animate-in fade-in slide-in-from-top-4 duration-300">
-          <div className="flex items-center gap-2.5">
-            <AlertTriangle className="w-5 h-5 text-amber-200 shrink-0 animate-bounce" />
-            <div className="text-xs">
-              <p className="font-bold text-white">Peringatan: Sesi Akan Berakhir</p>
-              <p className="text-amber-100 mt-0.5 flex items-center gap-1.5">
-                <span>Idle terdeteksi. Sisa:</span>
-                <span className="font-mono font-bold bg-amber-700/80 px-1.5 py-0.2 rounded text-white flex items-center gap-1">
-                  <Clock className="w-3 h-3 text-amber-300" />
-                  {formatTime(remainingSeconds)}
-                </span>
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={() => refreshSession(true)}
-            disabled={isRefreshing}
-            className="px-3 py-1.5 bg-white text-amber-900 hover:bg-amber-50 font-bold text-xs rounded-lg transition-colors cursor-pointer shrink-0 shadow-xs active:scale-95"
-          >
-            {isRefreshing ? "Memperbarui..." : "Perpanjang"}
-          </button>
-        </div>
-      )}
-    </>
+  return (
+    <div className="fixed top-4 right-4 z-50 max-w-sm bg-amber-600 text-white px-4 py-3 rounded-xl shadow-2xl border border-amber-500 flex items-center gap-3 animate-in fade-in slide-in-from-top-4 duration-300 pointer-events-none">
+      <AlertTriangle className="w-5 h-5 text-amber-200 shrink-0" />
+      <div className="text-xs">
+        <p className="font-bold text-white">Peringatan: Sesi Akan Berakhir</p>
+        <p className="text-amber-100 mt-0.5 flex items-center gap-1.5">
+          <span>Tidak ada aktivitas. Sisa:</span>
+          <span className="font-mono font-bold bg-amber-700/80 px-1.5 py-0.2 rounded text-white flex items-center gap-1">
+            <Clock className="w-3 h-3 text-amber-300" />
+            {formatTime(remainingSeconds)}
+          </span>
+        </p>
+      </div>
+    </div>
   );
 }
