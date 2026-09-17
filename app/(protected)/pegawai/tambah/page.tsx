@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
+import { Camera, Upload, Trash2 } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
 import { SearchableSelect } from "@/app/components/ui/searchable-select";
@@ -32,6 +33,7 @@ const pegawaiSchema = z.object({
   subUnitKerjaId: z.string().optional().nullable(),
   eselonId: z.string().optional().nullable(),
   statusPegawaiId: z.string().min(1, "Status pegawai wajib dipilih"),
+  fotoUrl: z.string().optional().nullable(),
 });
 
 type PegawaiForm = z.infer<typeof pegawaiSchema>;
@@ -110,6 +112,7 @@ export default function TambahPegawaiPage() {
       subUnitKerjaId: null,
       eselonId: null,
       statusPegawaiId: "",
+      fotoUrl: null,
     },
   });
 
@@ -121,6 +124,73 @@ export default function TambahPegawaiPage() {
   const selectedDirjenId = watch("dirjenId");
   const selectedUnitKerjaId = watch("unitKerjaId");
   const selectedSubUnitKerjaId = watch("subUnitKerjaId");
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [fotoPreview, setFotoPreview] = useState<string | null>(null);
+
+  // Kompresi foto via HTML Canvas ke JPEG ringan (maksimal 500x500 px, ~40-60KB)
+  const compressImage = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          let width = img.width;
+          let height = img.height;
+          const maxDim = 500;
+
+          if (width > height) {
+            if (width > maxDim) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            }
+          } else {
+            if (height > maxDim) {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d");
+          if (!ctx) return resolve(e.target?.result as string);
+          ctx.drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL("image/jpeg", 0.85));
+        };
+        img.onerror = reject;
+        img.src = e.target?.result as string;
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handlePhotoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast.error("File harus berupa gambar (JPG, PNG, atau WEBP)");
+      return;
+    }
+
+    try {
+      const compressed = await compressImage(file);
+      setFotoPreview(compressed);
+      setValue("fotoUrl", compressed);
+      toast.success("Foto profil berhasil dipilih!");
+    } catch (err: any) {
+      toast.error("Gagal memproses gambar");
+    }
+  };
+
+  const handleRemovePhoto = () => {
+    setFotoPreview(null);
+    setValue("fotoUrl", null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
 
   const fetchMasterData = async () => {
     try {
@@ -361,6 +431,54 @@ export default function TambahPegawaiPage() {
             <h2 className="text-base font-bold text-[#003399] flex items-center gap-2">
               <span>👤</span> Data Identitas &amp; Demografi
             </h2>
+          </div>
+
+          {/* Upload Foto Profil Pegawai */}
+          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 p-4 rounded-xl bg-slate-50 border border-slate-200/80">
+            <div className="relative w-20 h-20 rounded-full bg-slate-200 border-2 border-slate-300 flex items-center justify-center overflow-hidden shrink-0 shadow-xs">
+              {fotoPreview ? (
+                <img src={fotoPreview} alt="Preview Foto" className="w-full h-full object-cover" />
+              ) : (
+                <Camera className="w-8 h-8 text-slate-400" />
+              )}
+            </div>
+            <div className="flex-1 text-center sm:text-left text-xs space-y-1">
+              <p className="font-bold text-slate-800 text-sm">Foto Profil Pegawai (Opsional)</p>
+              <p className="text-slate-500 text-[11px]">
+                Format: JPG, PNG, atau WEBP. Gambar otomatis dikompresi ringan tanpa mengurangi kualitas.
+              </p>
+              <div className="pt-1 flex items-center justify-center sm:justify-start gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="h-8 text-xs cursor-pointer bg-white"
+                >
+                  <Upload className="w-3.5 h-3.5 mr-1.5 text-[#003399]" />
+                  {fotoPreview ? "Ganti Foto" : "Pilih Foto"}
+                </Button>
+                {fotoPreview && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleRemovePhoto}
+                    className="h-8 text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50 border-rose-200 cursor-pointer bg-white"
+                  >
+                    <Trash2 className="w-3.5 h-3.5 mr-1" />
+                    Hapus
+                  </Button>
+                )}
+              </div>
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handlePhotoSelect}
+                accept="image/png, image/jpeg, image/webp"
+                className="hidden"
+              />
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">

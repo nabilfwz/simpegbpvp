@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
+import { Camera, Trash2, Loader2, Upload } from "lucide-react";
 import { SearchableSelect } from "@/app/components/ui/searchable-select";
 import RiwayatPangkatTab from "./riwayat-pangkat-tab";
 import RiwayatJabatanTab from "./riwayat-jabatan-tab";
@@ -147,6 +148,108 @@ export default function PegawaiDetailPage() {
   const selectedDirjenId = watch("dirjenId");
   const selectedUnitKerjaId = watch("unitKerjaId");
   const selectedSubUnitKerjaId = watch("subUnitKerjaId");
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+
+  // Kompresi foto via HTML Canvas ke JPEG ringan (maksimal 500x500 px, ~40-60KB)
+  const compressImage = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          let width = img.width;
+          let height = img.height;
+          const maxDim = 500;
+
+          if (width > height) {
+            if (width > maxDim) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            }
+          } else {
+            if (height > maxDim) {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d");
+          if (!ctx) return resolve(e.target?.result as string);
+          ctx.drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL("image/jpeg", 0.85));
+        };
+        img.onerror = reject;
+        img.src = e.target?.result as string;
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast.error("File harus berupa gambar (JPG, PNG, atau WEBP)");
+      return;
+    }
+
+    setUploadingPhoto(true);
+    try {
+      const compressed = await compressImage(file);
+      const res = await fetch(`/api/pegawai/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fotoUrl: compressed }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Gagal mengunggah foto");
+      }
+
+      setPegawai((prev) => (prev ? { ...prev, fotoUrl: compressed } : null));
+      setValue("fotoUrl", compressed);
+      toast.success("Foto profil pegawai berhasil diperbarui!");
+    } catch (err: any) {
+      toast.error(err.message || "Gagal mengubah foto");
+    } finally {
+      setUploadingPhoto(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  const handleRemovePhoto = async () => {
+    if (!confirm("Apakah Anda yakin ingin menghapus foto profil pegawai ini?")) return;
+
+    setUploadingPhoto(true);
+    try {
+      const res = await fetch(`/api/pegawai/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fotoUrl: null }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Gagal menghapus foto");
+      }
+
+      setPegawai((prev) => (prev ? { ...prev, fotoUrl: null } : null));
+      setValue("fotoUrl", "");
+      toast.success("Foto profil pegawai berhasil dihapus!");
+    } catch (err: any) {
+      toast.error(err.message || "Gagal menghapus foto");
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
 
   const fetchPegawai = useCallback(async () => {
     setLoading(true);
@@ -441,17 +544,71 @@ export default function PegawaiDetailPage() {
         <div className="lg:col-span-1">
           <div className="bg-white rounded-xl shadow-xs border border-slate-200 p-6 space-y-5">
             <div className="flex flex-col items-center text-center">
-              {pegawai.fotoUrl ? (
-                <img
-                  src={pegawai.fotoUrl}
-                  className="w-28 h-28 rounded-full object-cover mb-3 border-2 border-[#003399] shadow-sm"
-                  alt=""
+              {/* Foto Profil Pegawai dengan Tombol Ubah Kamera */}
+              <div className="relative mb-2 group">
+                {pegawai.fotoUrl ? (
+                  <img
+                    src={pegawai.fotoUrl}
+                    className="w-28 h-28 rounded-full object-cover border-2 border-[#003399] shadow-sm"
+                    alt={pegawai.nama}
+                  />
+                ) : (
+                  <div className="w-28 h-28 rounded-full bg-gradient-to-br from-[#003399] to-[#0055cc] flex items-center justify-center text-white text-3xl font-bold shadow-sm">
+                    {pegawai.nama.charAt(0)}
+                  </div>
+                )}
+
+                {/* Tombol Kamera Mengambang */}
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploadingPhoto}
+                  className="absolute bottom-0 right-0 p-2 bg-[#003399] hover:bg-blue-800 text-white rounded-full shadow-md border-2 border-white transition-all cursor-pointer hover:scale-105 active:scale-95 disabled:opacity-50"
+                  title="Klik untuk ubah foto profil pegawai"
+                >
+                  {uploadingPhoto ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Camera className="w-4 h-4" />
+                  )}
+                </button>
+
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handlePhotoUpload}
+                  accept="image/png, image/jpeg, image/webp"
+                  className="hidden"
                 />
-              ) : (
-                <div className="w-28 h-28 rounded-full bg-gradient-to-br from-[#003399] to-[#0055cc] flex items-center justify-center text-white text-3xl font-bold mb-3 shadow-sm">
-                  {pegawai.nama.charAt(0)}
-                </div>
-              )}
+              </div>
+
+              {/* Tautan Ubah / Hapus Foto Cepat */}
+              <div className="flex items-center gap-2 mb-3">
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploadingPhoto}
+                  className="text-[11px] font-semibold text-[#003399] hover:underline cursor-pointer flex items-center gap-1"
+                >
+                  <Camera className="w-3 h-3" />
+                  {uploadingPhoto ? "Mengunggah..." : "Ubah Foto"}
+                </button>
+                {pegawai.fotoUrl && (
+                  <>
+                    <span className="text-slate-300 text-xs">•</span>
+                    <button
+                      type="button"
+                      onClick={handleRemovePhoto}
+                      disabled={uploadingPhoto}
+                      className="text-[11px] font-semibold text-rose-600 hover:underline cursor-pointer flex items-center gap-1"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                      Hapus
+                    </button>
+                  </>
+                )}
+              </div>
+
               <h2 className="text-lg font-bold text-slate-900 leading-snug">{pegawai.nama}</h2>
               <p className="text-slate-500 font-mono text-xs mt-0.5">{pegawai.nip}</p>
               <div className="mt-2 flex items-center gap-1.5 flex-wrap justify-center">
@@ -592,6 +749,43 @@ export default function PegawaiDetailPage() {
             <div className="p-6">
               {activeTab === "edit" && (
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+                  {/* Foto Profil Pegawai */}
+                  <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 p-4 rounded-xl bg-slate-50 border border-slate-200">
+                    <div className="w-16 h-16 rounded-full overflow-hidden bg-slate-200 border-2 border-slate-300 flex items-center justify-center shrink-0 shadow-xs">
+                      {pegawai.fotoUrl ? (
+                        <img src={pegawai.fotoUrl} alt={pegawai.nama} className="w-full h-full object-cover" />
+                      ) : (
+                        <Camera className="w-6 h-6 text-slate-400" />
+                      )}
+                    </div>
+                    <div className="flex-1 text-center sm:text-left text-xs">
+                      <p className="font-bold text-slate-800">Foto Profil Pegawai</p>
+                      <p className="text-slate-500 text-[11px] mt-0.5">
+                        Format file: JPG, PNG, atau WEBP. Gambar otomatis disesuaikan dan dikompresi ringan.
+                      </p>
+                      <div className="mt-2 flex items-center justify-center sm:justify-start gap-2">
+                        <button
+                          type="button"
+                          onClick={() => fileInputRef.current?.click()}
+                          disabled={uploadingPhoto}
+                          className="px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-xs font-semibold text-[#003399] hover:bg-slate-50 cursor-pointer shadow-2xs"
+                        >
+                          {uploadingPhoto ? "Mengunggah..." : "Pilih Foto Baru"}
+                        </button>
+                        {pegawai.fotoUrl && (
+                          <button
+                            type="button"
+                            onClick={handleRemovePhoto}
+                            disabled={uploadingPhoto}
+                            className="px-2.5 py-1.5 text-rose-600 hover:bg-rose-50 border border-rose-200 rounded-lg text-xs font-semibold cursor-pointer"
+                          >
+                            Hapus Foto
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
                   {/* Identity */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
