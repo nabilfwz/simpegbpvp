@@ -2,18 +2,61 @@
 
 import { signOut, useSession } from "next-auth/react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useState, useEffect } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
+import { useState, useEffect, Suspense } from "react";
 import { Button } from "@/app/components/ui/button";
 import { BrandLogo } from "@/app/components/brand-logo";
 import { AppSwitcher } from "@/app/components/app-switcher";
 import { isAdminRole, hasAdminAccess, getRoleLabel } from "@/lib/constants";
+
+const masterDataSubmenus = [
+  { href: "/admin/master-data?group=kepegawaian", group: "kepegawaian", label: "Pangkat & Status", icon: "🎖️" },
+  { href: "/admin/master-data?group=organisasi", group: "organisasi", label: "Unit Kerja & Balai", icon: "🏢" },
+  { href: "/admin/master-data?group=wilayah", group: "wilayah", label: "Wilayah", icon: "🗺️" },
+  { href: "/admin/master-data?group=demografi", group: "demografi", label: "Demografi", icon: "👤" },
+];
+
+function MasterDataSubmenuItems({ pathname }: { pathname: string }) {
+  const searchParams = useSearchParams();
+  const currentGroup = searchParams.get("group") || "kepegawaian";
+  const isMasterDataPage = pathname === "/admin/master-data";
+
+  return (
+    <div className="ml-5 pl-2.5 border-l-2 border-slate-200 mt-1 space-y-0.5 py-0.5">
+      {masterDataSubmenus.map((sub) => {
+        const isSubActive = isMasterDataPage && currentGroup === sub.group;
+        return (
+          <Link
+            key={sub.group}
+            href={sub.href}
+            className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-medium transition ${
+              isSubActive
+                ? "bg-blue-50 text-[#003399] font-bold shadow-2xs border border-blue-200"
+                : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+            }`}
+          >
+            <span className="text-sm shrink-0">{sub.icon}</span>
+            <span className="truncate">{sub.label}</span>
+          </Link>
+        );
+      })}
+    </div>
+  );
+}
 
 export function Sidebar() {
   const pathname = usePathname();
   const { data: session } = useSession();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [desktopCollapsed, setDesktopCollapsed] = useState(false);
+  const [masterDataOpen, setMasterDataOpen] = useState(pathname.startsWith("/admin/master-data"));
+
+  // Keep master data submenu open when on master data page
+  useEffect(() => {
+    if (pathname.startsWith("/admin/master-data")) {
+      setMasterDataOpen(true);
+    }
+  }, [pathname]);
 
   // Close sidebar on mobile when route changes
   useEffect(() => {
@@ -46,7 +89,7 @@ export function Sidebar() {
 
   // Menu admin umum: superadmin + admin
   const adminItems = [
-    { href: "/admin/master-data", label: "Master Data", icon: "⚙️" },
+    { href: "/admin/master-data", label: "Master Data", icon: "⚙️", isMasterData: true },
     { href: "/admin/users", label: "Manajemen User", icon: "👤", superadminOnly: true },
     { href: "/admin/log-aktivitas", label: "Log Aktivitas", icon: "📋", superadminOnly: true },
     { href: "/admin/tong-sampah", label: "Tong Sampah Pegawai", icon: "🗑️", badge: trashCount, superadminOnly: true },
@@ -175,6 +218,55 @@ export function Sidebar() {
               <div className="space-y-1">
                 {visibleAdminItems.map((item) => {
                   const active = isActive(item.href);
+
+                  if (item.isMasterData) {
+                    return (
+                      <div key={item.href}>
+                        <div className="flex items-center">
+                          <Link
+                            href={item.href}
+                            className={`flex-1 flex items-center gap-3 px-3 py-2.5 rounded-lg transition text-sm font-medium ${
+                              active
+                                ? "bg-blue-50 text-[#003399] font-semibold shadow-xs"
+                                : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                            }`}
+                          >
+                            <span className="text-lg flex-shrink-0">{item.icon}</span>
+                            {(!desktopCollapsed || mobileOpen) && (
+                              <span className="truncate">{item.label}</span>
+                            )}
+                          </Link>
+                          {(!desktopCollapsed || mobileOpen) && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                setMasterDataOpen(!masterDataOpen);
+                              }}
+                              className="p-2 text-slate-400 hover:text-slate-700 transition rounded-lg hover:bg-slate-100 ml-0.5"
+                              title={masterDataOpen ? "Tutup Submenu" : "Buka Submenu"}
+                            >
+                              <span
+                                className={`inline-block text-[10px] transition-transform duration-200 ${
+                                  masterDataOpen ? "rotate-90 text-[#003399]" : ""
+                                }`}
+                              >
+                                ▶
+                              </span>
+                            </button>
+                          )}
+                        </div>
+
+                        {/* Master Data Submenu Accordion */}
+                        {masterDataOpen && (!desktopCollapsed || mobileOpen) && (
+                          <Suspense fallback={null}>
+                            <MasterDataSubmenuItems pathname={pathname} />
+                          </Suspense>
+                        )}
+                      </div>
+                    );
+                  }
+
                   return (
                     <Link
                       key={item.href}

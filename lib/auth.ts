@@ -215,8 +215,8 @@ export const authOptions: NextAuthOptions = {
               ? "Google Workspace"
               : "Kredensial Manual";
 
-          // Catat aktivitas login ke tabel LogAktivitas
-          await prisma.logAktivitas.create({
+          // Catat aktivitas login secara non-blocking agar waktu respons login jauh lebih cepat
+          prisma.logAktivitas.create({
             data: {
               userId: user.id,
               aksi: "LOGIN",
@@ -225,10 +225,12 @@ export const authOptions: NextAuthOptions = {
               deskripsi: `User ${email} berhasil login melalui ${providerName}`,
               ipAddress: "127.0.0.1",
             },
+          }).catch((err) => {
+            console.error("[signIn callback] Gagal mencatat log login:", err);
           });
         }
       } catch (error) {
-        console.error("[signIn callback] Gagal mencatat log login:", error);
+        console.error("[signIn callback] Error:", error);
       }
       return true;
     },
@@ -265,5 +267,9 @@ export const authOptions: NextAuthOptions = {
   session: {
     strategy: "jwt",
   },
+  useSecureCookies:
+    process.env.NODE_ENV === "production" &&
+    (process.env.NEXTAUTH_URL?.startsWith("https://") ?? false) &&
+    !process.env.NEXTAUTH_URL?.includes("localhost"),
   secret: process.env.NEXTAUTH_SECRET,
 };

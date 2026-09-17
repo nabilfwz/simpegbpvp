@@ -8,6 +8,14 @@ export default withAuth(
     const path = req.nextUrl.pathname;
     const role = token?.role as string | undefined;
 
+    // Route API: jika tidak terautentikasi, kembalikan 401 JSON (jangan redirect ke HTML login)
+    if (path.startsWith("/api/")) {
+      if (!token) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
+      return NextResponse.next();
+    }
+
     // /admin root path: redirect ke /admin/master-data jika admin/superadmin, atau / jika user biasa
     if (path === "/admin") {
       if (STAFF_ROLES.includes(role as any)) {
@@ -35,7 +43,12 @@ export default withAuth(
   },
   {
     callbacks: {
-      authorized: ({ token }) => !!token,
+      authorized: ({ token, req }) => {
+        if (req.nextUrl.pathname.startsWith("/api/")) {
+          return true; // Biarkan middleware mengembalikan 401 JSON
+        }
+        return !!token;
+      },
     },
     pages: {
       signIn: "/login",

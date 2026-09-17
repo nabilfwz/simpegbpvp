@@ -70,6 +70,31 @@ async function main() {
     await upsertMaster("PANGKAT_GOLONGAN", item.label, item.kode, item.urutan);
   }
 
+  // 1b. GOLONGAN_PPPK
+  const pppkGolonganData = [
+    { label: "Golongan I", kode: "I", urutan: 1 },
+    { label: "Golongan II", kode: "II", urutan: 2 },
+    { label: "Golongan III", kode: "III", urutan: 3 },
+    { label: "Golongan IV", kode: "IV", urutan: 4 },
+    { label: "Golongan V", kode: "V", urutan: 5 },
+    { label: "Golongan VI", kode: "VI", urutan: 6 },
+    { label: "Golongan VII", kode: "VII", urutan: 7 },
+    { label: "Golongan VIII", kode: "VIII", urutan: 8 },
+    { label: "Golongan IX", kode: "IX", urutan: 9 },
+    { label: "Golongan X", kode: "X", urutan: 10 },
+    { label: "Golongan XI", kode: "XI", urutan: 11 },
+    { label: "Golongan XII", kode: "XII", urutan: 12 },
+    { label: "Golongan XIII", kode: "XIII", urutan: 13 },
+    { label: "Golongan XIV", kode: "XIV", urutan: 14 },
+    { label: "Golongan XV", kode: "XV", urutan: 15 },
+    { label: "Golongan XVI", kode: "XVI", urutan: 16 },
+    { label: "Golongan XVII", kode: "XVII", urutan: 17 },
+  ];
+
+  for (const item of pppkGolonganData) {
+    await upsertMaster("GOLONGAN_PPPK", item.label, item.kode, item.urutan);
+  }
+
   // 2. AGAMA
   const agamaData = [
     { label: "Islam", kode: "ISL", urutan: 1 },

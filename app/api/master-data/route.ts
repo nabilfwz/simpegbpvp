@@ -3,6 +3,11 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { catatLog } from "@/lib/log-aktivitas";
+import {
+  getCachedMasterData,
+  setCachedMasterData,
+  invalidateMasterDataCache,
+} from "@/lib/master-data-cache";
 import { z } from "zod";
 
 const masterDataSchema = z.object({
@@ -32,6 +37,17 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    const cacheKey = `${kategori}:${parentId ?? "all"}`;
+    const cached = getCachedMasterData(cacheKey);
+    if (cached) {
+      return NextResponse.json(cached, {
+        headers: {
+          "X-Cache": "HIT",
+          "Cache-Control": "private, max-age=30, stale-while-revalidate=60",
+        },
+      });
+    }
+
     const where: any = { kategori, aktif: true };
     if (parentId !== null) {
       if (parentId === "null" || parentId === "") {
@@ -51,7 +67,14 @@ export async function GET(request: NextRequest) {
       orderBy: [{ urutan: "asc" }, { label: "asc" }],
     });
 
-    return NextResponse.json(data);
+    setCachedMasterData(cacheKey, data);
+
+    return NextResponse.json(data, {
+      headers: {
+        "X-Cache": "MISS",
+        "Cache-Control": "private, max-age=30, stale-while-revalidate=60",
+      },
+    });
   } catch (error) {
     console.error("Error GET master-data:", error);
     return NextResponse.json(
@@ -70,6 +93,8 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const validated = masterDataSchema.parse(body);
+
+    invalidateMasterDataCache(validated.kategori);
 
     const existing = await prisma.masterData.findFirst({
       where: {

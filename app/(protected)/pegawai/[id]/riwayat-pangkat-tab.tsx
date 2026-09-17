@@ -158,11 +158,16 @@ function RiwayatPangkatForm({
 }: RiwayatPangkatFormProps) {
   const [loading, setLoading] = useState(false);
   const [pangkatGolonganList, setPangkatGolonganList] = useState<{ id: string; label: string }[]>([]);
+  const [pppkGolonganList, setPppkGolonganList] = useState<{ id: string; label: string }[]>([]);
 
   useEffect(() => {
     fetch("/api/master-data?kategori=PANGKAT_GOLONGAN")
       .then((res) => res.json())
-      .then(setPangkatGolonganList);
+      .then((data) => setPangkatGolonganList(Array.isArray(data) ? data : []));
+
+    fetch("/api/master-data?kategori=GOLONGAN_PPPK")
+      .then((res) => res.json())
+      .then((data) => setPppkGolonganList(Array.isArray(data) ? data : []));
   }, []);
 
   const {
@@ -220,12 +225,25 @@ function RiwayatPangkatForm({
               {...register("pangkatGolonganId", { required: true })}
               className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#003399] outline-none"
             >
-              <option value="">Pilih</option>
-              {pangkatGolonganList.map((item) => (
-                <option key={item.id} value={item.id}>
-                  {item.label}
-                </option>
-              ))}
+              <option value="">Pilih Pangkat / Golongan</option>
+              {pangkatGolonganList.length > 0 && (
+                <optgroup label="Golongan PNS">
+                  {pangkatGolonganList.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.label}
+                    </option>
+                  ))}
+                </optgroup>
+              )}
+              {pppkGolonganList.length > 0 && (
+                <optgroup label="Golongan PPPK">
+                  {pppkGolonganList.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.label} (PPPK)
+                    </option>
+                  ))}
+                </optgroup>
+              )}
             </select>
           </div>
 

@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { catatLog } from "@/lib/log-aktivitas";
+import { invalidateMasterDataCache } from "@/lib/master-data-cache";
 import { z } from "zod";
 
 const updateSchema = z.object({
@@ -66,6 +67,8 @@ export async function PATCH(
       include: { parent: true },
     });
 
+    invalidateMasterDataCache(existing.kategori);
+
     await catatLog({
       userId: (session.user as any).id,
       aksi: "UPDATE",
@@ -120,6 +123,8 @@ export async function DELETE(
       where: { id },
       data: { aktif: false },
     });
+
+    invalidateMasterDataCache(existing.kategori);
 
     await catatLog({
       userId: (session.user as any).id,
