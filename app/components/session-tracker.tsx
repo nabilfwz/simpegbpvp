@@ -2,8 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useSession, signOut } from "next-auth/react";
-import { AlertTriangle, Clock, RefreshCw, LogOut, CheckCircle2 } from "lucide-react";
-import { Button } from "@/app/components/ui/button";
+import { AlertTriangle, CheckCircle2, Clock } from "lucide-react";
 
 export function SessionTracker() {
   const { data: session, update } = useSession();
@@ -39,7 +38,7 @@ export function SessionTracker() {
 
       if (showFeedback) {
         setShowExtendedToast(true);
-        setTimeout(() => setShowExtendedToast(false), 4000);
+        setTimeout(() => setShowExtendedToast(false), 3000);
       }
     } catch (err) {
       console.error("Gagal memperpanjang sesi:", err);
@@ -62,8 +61,8 @@ export function SessionTracker() {
         const timeSinceLastRefresh = now - lastRefreshTimestampRef.current;
 
         // AUTO SLIDING SESSION:
-        // Jika sisa waktu <= 5 menit (300 detik) dan user baru saja kembali aktif,
-        // perpanjang sesi otomatis dan sembunyikan peringatan idle
+        // Jika sisa waktu <= 5 menit (300 detik) dan user kembali aktif,
+        // perpanjang sesi otomatis dan hilangkan warning atas
         if (remaining <= 300 && timeSinceLastRefresh > 10000) {
           refreshSession(true);
         }
@@ -106,7 +105,7 @@ export function SessionTracker() {
     return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
   };
 
-  // Hanya muncul jika sisa waktu <= 5 menit (300 detik) karena user idle/tidak beraktivitas
+  // Hanya muncul jika sisa waktu <= 5 menit (300 detik) karena user idle
   const isIdleWarning = remainingSeconds <= 300;
 
   return (
@@ -117,61 +116,34 @@ export function SessionTracker() {
           <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
           <div className="text-xs">
             <p className="font-bold text-white">Sesi Dilanjutkan</p>
-            <p className="text-emerald-200 mt-0.5">Token sesi berhasil diperpanjang 1 jam ke depan.</p>
+            <p className="text-emerald-200 mt-0.5">Sesi berhasil diperpanjang 1 jam ke depan.</p>
           </div>
         </div>
       )}
 
-      {/* Floating Dialog Peringatan: HANYA muncul di 5 menit terakhir jika komputer ditinggal idle */}
+      {/* Warning Alert di bagian atas (seperti toast peringatan), TANPA dialog/backdrop */}
       {isIdleWarning && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-amber-200 animate-in zoom-in-95 duration-200 text-slate-800">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-3 rounded-xl bg-amber-100 text-amber-800 border border-amber-300 animate-pulse">
-                <AlertTriangle className="w-6 h-6" />
-              </div>
-              <div>
-                <h3 className="text-base font-bold text-slate-900">Sesi Anda Akan Berakhir</h3>
-                <p className="text-xs text-slate-500">Tidak ada aktivitas terdeteksi belakangan ini</p>
-              </div>
-            </div>
-
-            <div className="bg-amber-50/80 border border-amber-200 rounded-xl p-4 text-center mb-5">
-              <p className="text-xs text-amber-900 font-medium mb-1">
-                Sesi login Anda akan otomatis ditutup dalam:
-              </p>
-              <div className="flex items-center justify-center gap-2">
-                <Clock className="w-5 h-5 text-amber-700 animate-spin" />
-                <span className="text-3xl font-black font-mono text-amber-900 tracking-tight">
+        <div className="fixed top-4 right-4 z-50 max-w-md bg-amber-600 text-white px-4 py-3 rounded-xl shadow-2xl border border-amber-500 flex items-center justify-between gap-3.5 animate-in fade-in slide-in-from-top-4 duration-300">
+          <div className="flex items-center gap-2.5">
+            <AlertTriangle className="w-5 h-5 text-amber-200 shrink-0 animate-bounce" />
+            <div className="text-xs">
+              <p className="font-bold text-white">Peringatan: Sesi Akan Berakhir</p>
+              <p className="text-amber-100 mt-0.5 flex items-center gap-1.5">
+                <span>Idle terdeteksi. Sisa:</span>
+                <span className="font-mono font-bold bg-amber-700/80 px-1.5 py-0.2 rounded text-white flex items-center gap-1">
+                  <Clock className="w-3 h-3 text-amber-300" />
                   {formatTime(remainingSeconds)}
                 </span>
-              </div>
-              <p className="text-[11px] text-amber-700 mt-2">
-                Gerakkan mouse, ketik tombol apa saja, atau klik tombol di bawah untuk melanjutkan bekerja tanpa keluar sistem.
               </p>
             </div>
-
-            <div className="flex items-center justify-end gap-2.5">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => signOut({ callbackUrl: "/login" })}
-                className="text-xs text-slate-600 hover:text-slate-900 cursor-pointer"
-              >
-                <LogOut className="w-3.5 h-3.5 mr-1" />
-                Keluar Sekarang
-              </Button>
-              <Button
-                size="sm"
-                onClick={() => refreshSession(true)}
-                disabled={isRefreshing}
-                className="text-xs bg-[#003399] hover:bg-blue-800 text-white cursor-pointer shadow-2xs"
-              >
-                <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${isRefreshing ? "animate-spin" : ""}`} />
-                {isRefreshing ? "Memperpanjang..." : "Lanjutkan Bekerja (+1 Jam)"}
-              </Button>
-            </div>
           </div>
+          <button
+            onClick={() => refreshSession(true)}
+            disabled={isRefreshing}
+            className="px-3 py-1.5 bg-white text-amber-900 hover:bg-amber-50 font-bold text-xs rounded-lg transition-colors cursor-pointer shrink-0 shadow-xs active:scale-95"
+          >
+            {isRefreshing ? "Memperbarui..." : "Perpanjang"}
+          </button>
         </div>
       )}
     </>
