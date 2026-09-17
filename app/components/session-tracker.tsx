@@ -2,19 +2,18 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useSession, signOut } from "next-auth/react";
-import { Clock, ShieldCheck, Activity, CheckCircle2 } from "lucide-react";
+import { AlertTriangle, Clock, RefreshCw, LogOut, CheckCircle2 } from "lucide-react";
+import { Button } from "@/app/components/ui/button";
 
 export function SessionTracker() {
   const { data: session, update } = useSession();
   const [remainingSeconds, setRemainingSeconds] = useState<number>(3600);
-  const [isOpen, setIsOpen] = useState<boolean>(false);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
-  const [lastActivityText, setLastActivityText] = useState<string>("Baru saja");
+  const [showExtendedToast, setShowExtendedToast] = useState<boolean>(false);
 
   const lastActivityTimestampRef = useRef<number>(Date.now());
   const expiryTimestampRef = useRef<number>(Date.now() + 3600 * 1000);
   const lastRefreshTimestampRef = useRef<number>(Date.now());
-  const popoverRef = useRef<HTMLDivElement>(null);
 
   // Inisialisasi waktu kedaluwarsa dari session NextAuth
   useEffect(() => {
@@ -28,8 +27,8 @@ export function SessionTracker() {
     }
   }, [session]);
 
-  // Fungsi perpanjang sesi secara otomatis di latar belakang
-  const refreshSession = useCallback(async () => {
+  // Fungsi perpanjang sesi
+  const refreshSession = useCallback(async (showFeedback = false) => {
     if (isRefreshing) return;
     setIsRefreshing(true);
     try {
@@ -37,32 +36,36 @@ export function SessionTracker() {
       // Reset waktu kedaluwarsa ke 1 jam ke depan
       expiryTimestampRef.current = Date.now() + 3600 * 1000;
       lastRefreshTimestampRef.current = Date.now();
+
+      if (showFeedback) {
+        setShowExtendedToast(true);
+        setTimeout(() => setShowExtendedToast(false), 4000);
+      }
     } catch (err) {
-      console.error("Gagal auto-refresh sesi:", err);
+      console.error("Gagal memperpanjang sesi:", err);
     } finally {
       setIsRefreshing(false);
     }
   }, [isRefreshing, update]);
 
-  // Monitor aktivitas user (klik, ketik, scroll, touch)
+  // Monitor aktivitas user di background (klik, ketik, scroll, touch)
   useEffect(() => {
     let lastRecorded = 0;
     const handleUserActivity = () => {
       const now = Date.now();
-      // Batasi throttling aktivitas setiap 3 detik
+      // Throttling pencatatan setiap 3 detik
       if (now - lastRecorded > 3000) {
         lastRecorded = now;
         lastActivityTimestampRef.current = now;
-        setLastActivityText("Baru saja");
 
-        // AUTO SLIDING SESSION:
-        // Jika sesi sudah berjalan 55 menit (sisa <= 5 menit / 300 detik)
-        // dan ada aktivitas user, perpanjang otomatis 1 jam ke depan secara mulus
         const remaining = Math.max(0, Math.floor((expiryTimestampRef.current - now) / 1000));
         const timeSinceLastRefresh = now - lastRefreshTimestampRef.current;
 
+        // AUTO SLIDING SESSION:
+        // Jika sisa waktu <= 5 menit (300 detik) dan user baru saja kembali aktif,
+        // perpanjang sesi otomatis dan sembunyikan peringatan idle
         if (remaining <= 300 && timeSinceLastRefresh > 10000) {
-          refreshSession();
+          refreshSession(true);
         }
       }
     };
@@ -80,23 +83,12 @@ export function SessionTracker() {
     };
   }, [refreshSession]);
 
-  // Timer interval setiap 1 detik untuk hitung mundur
+  // Timer interval setiap 1 detik
   useEffect(() => {
     const timer = setInterval(() => {
       const now = Date.now();
       const diff = Math.max(0, Math.floor((expiryTimestampRef.current - now) / 1000));
       setRemainingSeconds(diff);
-
-      // Hitung label aktivitas terakhir
-      const secSinceAct = Math.floor((now - lastActivityTimestampRef.current) / 1000);
-      if (secSinceAct < 10) {
-        setLastActivityText("Baru saja");
-      } else if (secSinceAct < 60) {
-        setLastActivityText(`${secSinceAct} dtk lalu`);
-      } else {
-        const min = Math.floor(secSinceAct / 60);
-        setLastActivityText(`${min} mnt lalu`);
-      }
 
       // Jika waktu benar-benar habis, arahkan ke login
       if (diff <= 0) {
@@ -107,19 +99,6 @@ export function SessionTracker() {
     return () => clearInterval(timer);
   }, []);
 
-  // Tutup popover jika klik di luar
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-    if (isOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-    }
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [isOpen]);
-
   // Format menit & detik MM:SS
   const formatTime = (totalSeconds: number) => {
     const m = Math.floor(totalSeconds / 60);
@@ -127,71 +106,74 @@ export function SessionTracker() {
     return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
   };
 
-  const isWarning = remainingSeconds <= 300; // <= 5 menit
+  // Hanya muncul jika sisa waktu <= 5 menit (300 detik) karena user idle/tidak beraktivitas
+  const isIdleWarning = remainingSeconds <= 300;
 
   return (
-    <div className="relative inline-block" ref={popoverRef}>
-      {/* Trigger Button di Desktop Header */}
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg border text-xs font-semibold transition-all duration-200 cursor-pointer ${
-          isWarning
-            ? "bg-amber-50 border-amber-300 text-amber-800 hover:bg-amber-100 animate-pulse"
-            : "bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100"
-        }`}
-        title="Masa aktif sesi: 1 Jam (Auto-extend saat beraktivitas)"
-      >
-        <Clock className={`w-3.5 h-3.5 ${isWarning ? "text-amber-600" : "text-[#003399]"}`} />
-        <span className="font-mono text-xs font-bold tracking-tight">
-          {formatTime(remainingSeconds)}
-        </span>
-        <span
-          className={`w-2 h-2 rounded-full ${
-            isWarning ? "bg-amber-500" : "bg-emerald-500"
-          } animate-ping`}
-        />
-      </button>
-
-      {/* Popover Dropdown Panel Info Bersih (Tanpa Tombol Testing) */}
-      {isOpen && (
-        <div className="absolute right-0 mt-2 w-76 bg-white rounded-2xl shadow-xl border border-slate-200 p-4 z-50 animate-in fade-in zoom-in-95 duration-150 text-slate-800">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-            <div className="flex items-center gap-2">
-              <ShieldCheck className="w-4 h-4 text-[#003399]" />
-              <h4 className="text-xs font-bold text-slate-900">Masa Aktif Sesi</h4>
-            </div>
-            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-[#003399] border border-blue-100">
-              1 Jam
-            </span>
-          </div>
-
-          {/* Countdown Display Card */}
-          <div className="mt-3 p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 text-center">
-            <p className="text-[11px] font-medium text-slate-500 mb-1">Sisa Waktu Sesi</p>
-            <div className="flex items-center justify-center gap-2">
-              <span className={`text-2xl font-black font-mono tracking-tight ${isWarning ? "text-amber-600" : "text-[#003399]"}`}>
-                {formatTime(remainingSeconds)}
-              </span>
-              <span className="text-xs text-slate-400 font-medium">/ 60:00</span>
-            </div>
-            <p className="text-[10px] text-slate-500 mt-1 flex items-center justify-center gap-1">
-              <Activity className="w-3 h-3 text-emerald-500" />
-              Aktivitas Terakhir: <strong className="text-slate-700">{lastActivityText}</strong>
-            </p>
-          </div>
-
-          {/* Konsep Rolling Session Info */}
-          <div className="mt-3 p-2.5 rounded-lg bg-blue-50/70 border border-blue-100 text-[11px] text-slate-600 space-y-1">
-            <p className="font-semibold text-[#003399] flex items-center gap-1.5">
-              <CheckCircle2 className="w-3.5 h-3.5 text-blue-600" />
-              Sesi Otomatis Terlindungi
-            </p>
-            <p className="leading-relaxed text-[10.5px]">
-              Sesi diperpanjang otomatis setiap Anda beraktivitas mendekati menit ke-55 tanpa mengganggu pekerjaan.
-            </p>
+    <>
+      {/* Toast konfirmasi saat sesi berhasil diperpanjang otomatis setelah idle */}
+      {showExtendedToast && (
+        <div className="fixed top-4 right-4 z-50 max-w-sm bg-emerald-900 text-white px-4 py-3 rounded-xl shadow-2xl border border-emerald-500/40 flex items-center gap-3 animate-in fade-in slide-in-from-top-4 duration-300">
+          <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+          <div className="text-xs">
+            <p className="font-bold text-white">Sesi Dilanjutkan</p>
+            <p className="text-emerald-200 mt-0.5">Token sesi berhasil diperpanjang 1 jam ke depan.</p>
           </div>
         </div>
       )}
-    </div>
+
+      {/* Floating Dialog Peringatan: HANYA muncul di 5 menit terakhir jika komputer ditinggal idle */}
+      {isIdleWarning && (
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-amber-200 animate-in zoom-in-95 duration-200 text-slate-800">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-3 rounded-xl bg-amber-100 text-amber-800 border border-amber-300 animate-pulse">
+                <AlertTriangle className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-slate-900">Sesi Anda Akan Berakhir</h3>
+                <p className="text-xs text-slate-500">Tidak ada aktivitas terdeteksi belakangan ini</p>
+              </div>
+            </div>
+
+            <div className="bg-amber-50/80 border border-amber-200 rounded-xl p-4 text-center mb-5">
+              <p className="text-xs text-amber-900 font-medium mb-1">
+                Sesi login Anda akan otomatis ditutup dalam:
+              </p>
+              <div className="flex items-center justify-center gap-2">
+                <Clock className="w-5 h-5 text-amber-700 animate-spin" />
+                <span className="text-3xl font-black font-mono text-amber-900 tracking-tight">
+                  {formatTime(remainingSeconds)}
+                </span>
+              </div>
+              <p className="text-[11px] text-amber-700 mt-2">
+                Gerakkan mouse, ketik tombol apa saja, atau klik tombol di bawah untuk melanjutkan bekerja tanpa keluar sistem.
+              </p>
+            </div>
+
+            <div className="flex items-center justify-end gap-2.5">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => signOut({ callbackUrl: "/login" })}
+                className="text-xs text-slate-600 hover:text-slate-900 cursor-pointer"
+              >
+                <LogOut className="w-3.5 h-3.5 mr-1" />
+                Keluar Sekarang
+              </Button>
+              <Button
+                size="sm"
+                onClick={() => refreshSession(true)}
+                disabled={isRefreshing}
+                className="text-xs bg-[#003399] hover:bg-blue-800 text-white cursor-pointer shadow-2xs"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${isRefreshing ? "animate-spin" : ""}`} />
+                {isRefreshing ? "Memperpanjang..." : "Lanjutkan Bekerja (+1 Jam)"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
